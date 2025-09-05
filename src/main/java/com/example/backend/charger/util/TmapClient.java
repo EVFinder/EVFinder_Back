@@ -27,12 +27,12 @@ public class TmapClient {
                 + "?version=1"
                 + "&centerLat=" + lat
                 + "&centerLon=" + lon
-                + "&radius=2"
+                + "&radius=1"
                 + "&categories=" + categories
                 + "&reqCoordType=WGS84GEO"
                 + "&resCoordType=WGS84GEO"
                 + "&page=1"
-                + "&count=20";
+                + "&count=10";
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Accept", "application/json");
@@ -47,7 +47,6 @@ public class TmapClient {
                 String.class
         );
 
-        System.out.println("Tmap Raw Response: " + response.getBody());
         return response.getBody();
     }
 
