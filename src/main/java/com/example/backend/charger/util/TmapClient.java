@@ -19,7 +19,7 @@ public class TmapClient {
         this.restTemplate = restTemplate;
         this.tmapConfig = tmapConfig;
     }
-    // 전기차 충전소 검색
+    // 전기차 충전소 검색(복수)
     public String getNearbyChargers(double lat, double lon) {
         String categories = URLEncoder.encode("EV충전소", StandardCharsets.UTF_8);
 
@@ -32,7 +32,7 @@ public class TmapClient {
                 + "&reqCoordType=WGS84GEO"
                 + "&resCoordType=WGS84GEO"
                 + "&page=1"
-                + "&count=10";
+                + "&count=5"; // count로 건물 개수 조정 가능
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Accept", "application/json");
@@ -50,4 +50,33 @@ public class TmapClient {
         return response.getBody();
     }
 
+    // 단일 충전소 조회
+    public String getNearbyChargersOO(double lat, double lon) {
+        String categories = URLEncoder.encode("EV충전소", StandardCharsets.UTF_8);
+
+        String url = tmapConfig.getBaseUrl() + "/tmap/pois/search/around"
+                + "?version=1"
+                + "&centerLat=" + lat
+                + "&centerLon=" + lon
+                + "&radius=1"
+                + "&categories=" + categories
+                + "&reqCoordType=WGS84GEO"
+                + "&resCoordType=WGS84GEO"
+                + "&page=1"
+                + "&count=1";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Accept", "application/json");
+        headers.set("appKey", tmapConfig.getAppKey());
+
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                URI.create(url),
+                HttpMethod.GET,
+                entity,
+                String.class
+        );
+        return response.getBody();
+    }
 }
