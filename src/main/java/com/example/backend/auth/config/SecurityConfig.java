@@ -26,7 +26,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 X
             .authorizeHttpRequests(auth -> auth
                 // 회원가입/로그인은 인증 없이 허용
-                .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/**").permitAll()
                 // 나머지는 JWT 인증 필요
                 .anyRequest().authenticated()
             )
