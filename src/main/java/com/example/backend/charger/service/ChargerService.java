@@ -23,7 +23,7 @@ public class ChargerService {
     public List<ChargerDTO> findNearbyChargers(double lat, double lon) {
         String json = tmapClient.getNearbyChargers(lat, lon);
 
-        // 🔍 전체 Raw Response 로깅
+        // 전체 Raw Response 로깅
         System.out.println("=== Tmap Raw Response in Service ===");
         System.out.println(json);
 

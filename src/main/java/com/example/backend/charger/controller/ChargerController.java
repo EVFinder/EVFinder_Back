@@ -24,4 +24,6 @@ public class ChargerController {
         System.out.println("Received lat = " + lat + ", lon = " + lon);
         return chargerService.findNearbyChargers(lat, lon);
     }
+
+    
 }
