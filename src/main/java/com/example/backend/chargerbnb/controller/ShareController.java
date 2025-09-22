@@ -2,6 +2,8 @@ package com.example.backend.chargerbnb.controller;
 
 import com.example.backend.chargerbnb.dto.ShareDTO;
 import com.example.backend.chargerbnb.service.ShareService;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,5 +33,19 @@ public class ShareController {
     public ResponseEntity<List<ShareDTO>> getShares(@PathVariable String uid)
             throws ExecutionException, InterruptedException {
         return ResponseEntity.ok(shareService.getSharesByUser(uid));
+    }
+
+    // 공유하는 충전기 상태 변경
+    @PatchMapping("/{uid}/{shareId}/status")
+    public ResponseEntity<String> updateShareStatus(
+            @PathVariable String uid,
+            @PathVariable String shareId,
+            @RequestParam("status") String status) {
+        try {
+            shareService.updateShareStatus(uid, shareId, status);
+            return ResponseEntity.ok("공유 충전기 상태가 업데이트되었습니다: " + status);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 }
