@@ -23,7 +23,7 @@ public class FirebaseConfig {
                     .build();
 
             FirebaseApp.initializeApp(options);
-            System.out.println("✅ Firebase 초기화 완료");
+            System.out.println("Firebase 초기화 완료");
         }
     }
 }
