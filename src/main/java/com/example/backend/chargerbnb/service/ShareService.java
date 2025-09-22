@@ -47,4 +47,12 @@ public class ShareService {
         }
         return list;
     }
+    // 상태 업데이트 기능
+    public void updateShareStatus(String uid, String shareId, String status)
+            throws ExecutionException, InterruptedException {
+        DocumentReference shareRef =
+                firestore.collection("users").document(uid).collection("share").document(shareId);
+
+        shareRef.update("status", status).get();
+    }
 }

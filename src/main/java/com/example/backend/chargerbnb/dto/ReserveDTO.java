@@ -13,6 +13,7 @@ import lombok.Setter;
 public class ReserveDTO {
     private String id;
     private String shareId;
+    private String ownerUid; // 공유 충전기 주인 uid
 
     @JsonSerialize(using = TimestampSerializer.class)
     @JsonDeserialize(using = TimestampDeserializer.class)
