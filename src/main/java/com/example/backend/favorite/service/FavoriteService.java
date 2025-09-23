@@ -44,14 +44,22 @@ public class FavoriteService {
     }
 
     // 즐겨찾기 삭제
-    public void removeFavorite(String uid, String stationId) throws ExecutionException, InterruptedException {
-        firestore.collection("users")
-                .document(uid)
-                .collection("favorite")
-                .document(stationId)
-                .delete()
-                .get();
+   public void removeFavorite(String uid, String stationId) throws ExecutionException, InterruptedException {
+        DocumentReference favRef = firestore.collection("users")
+            .document(uid)
+            .collection("favorite")
+            .document(stationId);
+
+        // chargers 하위 문서 삭제
+        CollectionReference chargersRef = favRef.collection("chargers");
+        List<QueryDocumentSnapshot> chargerDocs = chargersRef.get().get().getDocuments();
+        for (QueryDocumentSnapshot chargerDoc : chargerDocs) {
+            chargersRef.document(chargerDoc.getId()).delete().get();
     }
+
+    // 마지막으로 favorite 문서 삭제
+    favRef.delete().get();
+}
 
     // 즐겨찾기 조회
     public List<Map<String, Object>> getFavorites(String uid) throws ExecutionException, InterruptedException {
