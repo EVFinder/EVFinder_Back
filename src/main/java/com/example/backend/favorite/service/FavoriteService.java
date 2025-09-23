@@ -55,10 +55,10 @@ public class FavoriteService {
         List<QueryDocumentSnapshot> chargerDocs = chargersRef.get().get().getDocuments();
         for (QueryDocumentSnapshot chargerDoc : chargerDocs) {
             chargersRef.document(chargerDoc.getId()).delete().get();
-    }
+        }
 
-    // 마지막으로 favorite 문서 삭제
-    favRef.delete().get();
+        // 마지막으로 favorite 문서 삭제
+        favRef.delete().get();
 }
 
     // 즐겨찾기 조회
