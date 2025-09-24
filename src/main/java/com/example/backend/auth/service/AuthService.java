@@ -19,6 +19,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
+import com.google.cloud.Timestamp;
 
 @Service
 public class AuthService {
@@ -54,13 +55,15 @@ public class AuthService {
 
             Map<String, Object> userData = new HashMap<>();
             userData.put("email", email);
-            userData.put("createdAt", System.currentTimeMillis());
+            userData.put("userName", request.getUserName());
+            userData.put("createdAt", Timestamp.now());
 
-            ApiFuture<WriteResult> writeResult = userRef.set(userData);
+            //찍고, .get으로 가져오기
+            userRef.set(userData).get();
 
             String jwt = jwtUtil.generateToken(uid, email);
 
-            return new SignupResponse(uid, email, jwt);
+            return new SignupResponse(uid, email, request.getUserName(), jwt);
 
         }
         catch(Exception e){
@@ -100,10 +103,15 @@ public class AuthService {
             String uid = decodedToken.getUid();
             String email = decodedToken.getEmail();
 
+            // 2. Firestore에서 userName 가져오기
+            Firestore db = FirestoreClient.getFirestore();
+            DocumentSnapshot snapshot = db.collection("users").document(uid).get().get();
+            String userName = snapshot.getString("userName");
+
             // 3. JWT 발급
             String jwt = jwtUtil.generateToken(uid, email);
 
-            return new LoginResponse(uid, email, jwt);
+            return new LoginResponse(uid, email,userName, jwt);
         }
         catch (IllegalArgumentException e) {
             System.err.println("로그인 실패: " + e.getMessage());
