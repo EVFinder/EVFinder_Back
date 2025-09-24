@@ -3,8 +3,6 @@ package com.example.backend.review.service;
 import com.example.backend.review.dto.ReviewCreateRequest;
 import com.example.backend.review.dto.ReviewResponse;
 import com.example.backend.review.util.ReviewMapper;
-
-import com.google.api.core.ApiFuture;
 import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.*;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +25,7 @@ public class ReviewService {
         if (userName == null) userName = "사용자";
 
         String reviewId = UUID.randomUUID().toString();
-        Timestamp createdAt = Timestamp.now();
+        Timestamp now = Timestamp.now();
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("reviewId", reviewId);
@@ -37,7 +35,9 @@ public class ReviewService {
         data.put("userName", userName);
         data.put("rating", req.getRating());
         data.put("content", req.getContent());
-        data.put("createdAt", createdAt);
+        data.put("createdAt", now);
+        data.put("updatedAt", now);
+        
 
         WriteBatch batch = firestore.batch();
 
@@ -61,7 +61,8 @@ public class ReviewService {
                 .userName(userName)
                 .rating(req.getRating())
                 .content(req.getContent())
-                .createdAt(createdAt)
+                .createdAt(now)
+                .updatedAt(now)
                 .build();
     }
 
@@ -88,9 +89,7 @@ public class ReviewService {
         batch.commit().get();
     }
 
-
     //사용자별 리뷰 목록 조회
-
     public List<ReviewResponse> listByUser(String uid) throws ExecutionException, InterruptedException {
         CollectionReference col = firestore.collection("users").document(uid).collection("reviews");
         List<QueryDocumentSnapshot> docs = col.get().get().getDocuments();
@@ -101,17 +100,100 @@ public class ReviewService {
         }
         return result;
     }
+    
+    //충전소별 리뷰 목록 조회 (정렬)
+    public List<ReviewResponse> listByStation(String stationId, String orderBy, int limit)
+        throws ExecutionException, InterruptedException {
 
-
-    //충전소별 리뷰 목록 조회
-    public List<ReviewResponse> listByStation(String stationId) throws ExecutionException, InterruptedException {
         CollectionReference col = firestore.collection("stations").document(stationId).collection("reviews");
-        List<QueryDocumentSnapshot> docs = col.get().get().getDocuments();
+
+        Query query = col;
+        if ("createdAt".equals(orderBy)) {
+            query = query.orderBy("createdAt", Query.Direction.DESCENDING);
+        } else if ("rating".equals(orderBy)) {
+            query = query.orderBy("rating", Query.Direction.DESCENDING);
+        }
+
+        if (limit > 0) {
+            query = query.limit(limit);
+        }
+
+        List<QueryDocumentSnapshot> docs = query.get().get().getDocuments();
 
         List<ReviewResponse> result = new ArrayList<>();
         for (DocumentSnapshot d : docs) {
             result.add(ReviewMapper.toResponse(d));
         }
         return result;
+    }
+
+
+    //리뷰 수정
+    public ReviewResponse update(String uid, String reviewId, int rating, String content)
+            throws ExecutionException, InterruptedException {
+
+        DocumentReference userReviewRef = firestore.collection("users")
+                .document(uid).collection("reviews").document(reviewId);
+
+        DocumentSnapshot snap = userReviewRef.get().get();
+        if (!snap.exists()) {
+            throw new IllegalArgumentException("리뷰가 존재하지 않습니다.");
+        }
+
+        String stationId = snap.getString("id");
+        String name = snap.getString("name");
+        String userName = snap.getString("userName");
+
+        Timestamp now = Timestamp.now();
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("rating", rating);
+        updates.put("content", content);
+        updates.put("updatedAt", now);
+
+        WriteBatch batch = firestore.batch();
+        batch.update(userReviewRef, updates);
+
+        if (stationId != null) {
+            DocumentReference stationReviewRef = firestore.collection("stations")
+                    .document(stationId).collection("reviews").document(reviewId);
+            batch.update(stationReviewRef, updates);
+        }
+
+        batch.commit().get();
+
+        return ReviewResponse.builder()
+                .reviewId(reviewId)
+                .id(stationId)
+                .name(name)
+                .uid(uid)
+                .userName(userName)
+                .rating(rating)
+                .content(content)
+                .createdAt(snap.getTimestamp("createdAt")) // 기존 생성 시각 유지
+                .updatedAt(now)
+                .build();
+    }
+
+    //리뷰 통계
+    public Map<String, Object> getStats(String stationId) throws ExecutionException, InterruptedException {
+        CollectionReference col = firestore.collection("stations").document(stationId).collection("reviews");
+        List<QueryDocumentSnapshot> docs = col.get().get().getDocuments();
+
+        int count = docs.size();
+        double avg = 0.0;
+        if (count > 0) {
+            int sum = 0;
+            for (DocumentSnapshot d : docs) {
+                Long ratingValue = d.getLong("rating");
+                if (ratingValue != null) sum += ratingValue.intValue();
+            }
+            avg = (double) sum / count;
+        }
+
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("count", count);
+        stats.put("averageRating", avg);
+        return stats;
     }
 }

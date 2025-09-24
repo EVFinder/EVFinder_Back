@@ -18,6 +18,7 @@ public class ReviewMapper {
                 .rating(rating)
                 .content(doc.getString("content"))
                 .createdAt(doc.getTimestamp("createdAt"))
+                .updatedAt(doc.getTimestamp("updatedAt"))
                 .build();
     }
 }
