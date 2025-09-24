@@ -21,15 +21,25 @@ public class ShareService {
 
     // 공유 충전기 등록
     public String addShare(String uid, ShareDTO share) throws ExecutionException, InterruptedException {
+        Firestore db = firestore;
+
         share.setCreatedAt(Timestamp.now());
+        
         if (share.getStatus() == null) {
             share.setStatus("available");
         }
 
-        ApiFuture<DocumentReference> future =
-                firestore.collection("users").document(uid).collection("share").add(share);
+         DocumentReference docRef = db.collection("users")
+            .document(uid)
+            .collection("share")
+            .document();
 
-        return future.get().getId();
+        share.setId(docRef.getId()); // DTO에 수동으로 ID 세팅
+
+        // Firestore에 저장
+        docRef.set(share).get();
+
+        return docRef.getId();
     }
 
     // 내 공유 충전기 조회
@@ -47,6 +57,31 @@ public class ShareService {
         }
         return list;
     }
+
+    // 예약 가능한 모든 충전소 조회
+    public List<ShareDTO> getAllAvailableShares() throws ExecutionException, InterruptedException {
+        Firestore db = firestore;
+
+        // status = available인 모든 share 조회
+        ApiFuture<QuerySnapshot> future = db.collectionGroup("share")
+                .whereEqualTo("status", "available")
+                .get();
+
+        List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+        List<ShareDTO> shares = new ArrayList<>();
+
+        for (QueryDocumentSnapshot doc : documents) {
+            ShareDTO share = doc.toObject(ShareDTO.class);
+
+            // 문서 id -> DTO
+            share.setId(doc.getId());
+
+            shares.add(share);
+        }
+
+        return shares;
+    }
+
     // 상태 업데이트 기능
     public void updateShareStatus(String uid, String shareId, String status)
             throws ExecutionException, InterruptedException {
