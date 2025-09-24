@@ -7,6 +7,7 @@ import com.google.cloud.firestore.*;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -58,29 +59,46 @@ public class ShareService {
         return list;
     }
 
-    // 예약 가능한 모든 충전소 조회
-    public List<ShareDTO> getAllAvailableShares() throws ExecutionException, InterruptedException {
-        Firestore db = firestore;
+    public List<ShareDTO> getAllAvailableShares(double userLat, double userLon, double radiusKm)
+            throws ExecutionException, InterruptedException {
 
-        // status = available인 모든 share 조회
-        ApiFuture<QuerySnapshot> future = db.collectionGroup("share")
+        List<ShareDTO> results = new ArrayList<>();
+
+        ApiFuture<QuerySnapshot> future = firestore.collectionGroup("share")
                 .whereEqualTo("status", "available")
                 .get();
 
-        List<QueryDocumentSnapshot> documents = future.get().getDocuments();
-        List<ShareDTO> shares = new ArrayList<>();
-
-        for (QueryDocumentSnapshot doc : documents) {
+        for (DocumentSnapshot doc : future.get().getDocuments()) {
             ShareDTO share = doc.toObject(ShareDTO.class);
+            if (share != null) {
+                share.setId(doc.getId());
 
-            // 문서 id -> DTO
-            share.setId(doc.getId());
-
-            shares.add(share);
+                double distance = haversine(userLat, userLon, share.getLat(), share.getLon());
+                if (distance <= radiusKm) {
+                    results.add(share);
+                }
+            }
         }
 
-        return shares;
+        results.sort(Comparator.comparingDouble(
+                s -> haversine(userLat, userLon, s.getLat(), s.getLon())
+        ));
+
+        return results;
     }
+
+    // Haversine 공식 (킬로미터 단위)
+    private double haversine(double lat1, double lon1, double lat2, double lon2) {
+        final int R = 6371; // 지구 반경 km
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
 
     // 상태 업데이트 기능
     public void updateShareStatus(String uid, String shareId, String status)
