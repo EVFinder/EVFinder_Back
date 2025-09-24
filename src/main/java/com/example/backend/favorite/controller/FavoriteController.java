@@ -41,4 +41,10 @@ public class FavoriteController {
     public ResponseEntity<?> getFavorites(@PathVariable String uid) throws Exception {
         return ResponseEntity.ok(favoriteService.getFavorites(uid));
     }
+
+    //즐겨찾기 업데이트
+    @PutMapping("/updateStatus/{uid}")
+    public ResponseEntity<?> updateFavoriteStatus(@PathVariable String uid) throws Exception {
+        return ResponseEntity.ok(favoriteService.updateFavoriteStatus(uid));
+    }
 }

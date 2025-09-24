@@ -35,6 +35,15 @@ public class ShareController {
         return ResponseEntity.ok(shareService.getSharesByUser(uid));
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<ShareDTO>> getAllShares(
+            @RequestParam double lat,
+            @RequestParam double lon,
+            @RequestParam(defaultValue = "5") double radiusKm // 기본 반경 5km
+    ) throws ExecutionException, InterruptedException {
+        return ResponseEntity.ok(shareService.getAllAvailableShares(lat, lon, radiusKm));
+    }
+
     // 공유하는 충전기 상태 변경
     @PatchMapping("/{uid}/{shareId}/status")
     public ResponseEntity<String> updateShareStatus(
