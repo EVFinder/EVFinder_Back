@@ -100,18 +100,16 @@ public class AuthService {
             String uid = decodedToken.getUid();
             String email = decodedToken.getEmail();
 
-            // 2. Firestore에서 userName 가져오기
-            Firestore db = FirestoreClient.getFirestore();
-            DocumentSnapshot snapshot = db.collection("users").document(uid).get().get();
-            String userName = snapshot.getString("userName");
+            // 2. Firestore에서 userName 가져오기 (Bean 사용)
+            DocumentSnapshot snapshot = firestore.collection("users").document(uid).get().get();
+            String userName = snapshot.contains("userName") ? snapshot.getString("userName") : "사용자";
 
             // 3. JWT 발급
             String jwt = jwtUtil.generateToken(uid, email);
 
-            return new LoginResponse(uid, email,userName, jwt);
-        }
-        catch (IllegalArgumentException e) {
+            return new LoginResponse(uid, email, userName, jwt);
 
+        } catch (IllegalArgumentException e) {
             System.err.println("로그인 실패: " + e.getMessage());
             throw e;
         } catch (Exception e) {
