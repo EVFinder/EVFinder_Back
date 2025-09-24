@@ -1,5 +1,7 @@
 package com.example.backend.review.dto;
 
+import com.example.backend.common.json.TimestampSerializer;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.cloud.Timestamp;
 import lombok.Builder;
 import lombok.Getter;
@@ -14,5 +16,7 @@ public class ReviewResponse {
     private String userName;   // 작성자 닉네임
     private int rating;        // 별점
     private String content;    // 내용
+
+    @JsonSerialize(using = TimestampSerializer.class)
     private Timestamp createdAt; // Firestore Timestamp
 }

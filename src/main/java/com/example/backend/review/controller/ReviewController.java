@@ -22,12 +22,7 @@ public class ReviewController {
     @PostMapping("/add/{uid}")
     public ReviewResponse add(@PathVariable String uid,
                               @RequestBody ReviewCreateRequest req) throws Exception {
-        // userName 은 users/{uid} 문서에서 가져옴
-        DocumentSnapshot userSnap = firestore.collection("users").document(uid).get().get();
-        String userName = userSnap.getString("userName");
-        if (userName == null) userName = "사용자";
-
-        return reviewService.add(uid, userName, req);
+        return reviewService.add(uid, req);
     }
 
 

@@ -2,6 +2,8 @@ package com.example.backend.review.service;
 
 import com.example.backend.review.dto.ReviewCreateRequest;
 import com.example.backend.review.dto.ReviewResponse;
+import com.example.backend.review.util.ReviewMapper;
+
 import com.google.api.core.ApiFuture;
 import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.*;
@@ -18,8 +20,11 @@ public class ReviewService {
 
 
     //리뷰 추가 (users/{uid}, stations/{id} 양방향 저장)
-    public ReviewResponse add(String uid, String userName, ReviewCreateRequest req)
-            throws ExecutionException, InterruptedException {
+    public ReviewResponse add(String uid, ReviewCreateRequest req) throws ExecutionException, InterruptedException {
+
+        DocumentSnapshot userDoc = firestore.collection("users").document(uid).get().get();
+        String userName = userDoc.getString("userName");
+        if (userName == null) userName = "사용자";
 
         String reviewId = UUID.randomUUID().toString();
         Timestamp createdAt = Timestamp.now();
@@ -92,7 +97,7 @@ public class ReviewService {
 
         List<ReviewResponse> result = new ArrayList<>();
         for (DocumentSnapshot d : docs) {
-            result.add(toResponse(d));
+            result.add(ReviewMapper.toResponse(d));
         }
         return result;
     }
@@ -105,23 +110,8 @@ public class ReviewService {
 
         List<ReviewResponse> result = new ArrayList<>();
         for (DocumentSnapshot d : docs) {
-            result.add(toResponse(d));
+            result.add(ReviewMapper.toResponse(d));
         }
         return result;
-    }
-
-
-    //DocumentSnapshot → DTO 변환
-    private ReviewResponse toResponse(DocumentSnapshot doc) {
-        return ReviewResponse.builder()
-                .reviewId(doc.getString("reviewId"))
-                .id(doc.getString("id"))
-                .name(doc.getString("name"))
-                .uid(doc.getString("uid"))
-                .userName(doc.getString("userName"))
-                .rating(doc.getLong("rating").intValue())
-                .content(doc.getString("content"))
-                .createdAt(doc.getTimestamp("createdAt"))
-                .build();
     }
 }
