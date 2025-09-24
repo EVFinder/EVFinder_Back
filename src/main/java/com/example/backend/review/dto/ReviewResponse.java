@@ -18,5 +18,8 @@ public class ReviewResponse {
     private String content;    // 내용
 
     @JsonSerialize(using = TimestampSerializer.class)
-    private Timestamp createdAt; // Firestore Timestamp
+    private Timestamp createdAt; // 최초 작성 시각
+
+    @JsonSerialize(using = TimestampSerializer.class)
+    private Timestamp updatedAt; // 마지막 수정 시각
 }

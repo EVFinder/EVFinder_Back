@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.example.backend.favorite.dto.ChargerInfoDto;
 import com.google.cloud.firestore.*;
-import com.google.firebase.cloud.FirestoreClient;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -15,11 +15,11 @@ import java.util.stream.Collectors;
 
 
 @Service
+@RequiredArgsConstructor
 public class FavoriteService {
+    private final Firestore firestore;
 
-    private final Firestore firestore = FirestoreClient.getFirestore();
-
-    // 즐겨찾기 추가
+     // 즐겨찾기 추가
     public void addFavorite(FavoriteRequest request) throws ExecutionException, InterruptedException {
         DocumentReference favRef = firestore.collection("users")
                 .document(request.getUid())
@@ -48,11 +48,11 @@ public class FavoriteService {
     }
 
     // 즐겨찾기 삭제
-   public void removeFavorite(String uid, String stationId) throws ExecutionException, InterruptedException {
+    public void removeFavorite(String uid, String stationId) throws ExecutionException, InterruptedException {
         DocumentReference favRef = firestore.collection("users")
-            .document(uid)
-            .collection("favorite")
-            .document(stationId);
+                .document(uid)
+                .collection("favorite")
+                .document(stationId);
 
         // chargers 하위 문서 삭제
         CollectionReference chargersRef = favRef.collection("chargers");
@@ -63,7 +63,7 @@ public class FavoriteService {
 
         // 마지막으로 favorite 문서 삭제
         favRef.delete().get();
-}
+    }
 
     // 즐겨찾기 조회
     public List<Map<String, Object>> getFavorites(String uid) throws ExecutionException, InterruptedException {
@@ -83,7 +83,6 @@ public class FavoriteService {
         }
         return result;
     }
-
     //status 업데이트
     public List<Map<String, Object>> updateFavoriteStatus(String uid) throws Exception {
         CollectionReference favs = firestore.collection("users").document(uid).collection("favorite");
@@ -140,3 +139,4 @@ public class FavoriteService {
         return result;
     }
 }
+
