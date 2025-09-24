@@ -35,12 +35,14 @@ public class ShareController {
         return ResponseEntity.ok(shareService.getSharesByUser(uid));
     }
 
-    // 모든 공유 충전기 조회 (예약 가능만)
     @GetMapping("/all")
-    public ResponseEntity<List<ShareDTO>> getAllShares() throws ExecutionException, InterruptedException {
-        return ResponseEntity.ok(shareService.getAllAvailableShares());
+    public ResponseEntity<List<ShareDTO>> getAllShares(
+            @RequestParam double lat,
+            @RequestParam double lon,
+            @RequestParam(defaultValue = "5") double radiusKm // 기본 반경 5km
+    ) throws ExecutionException, InterruptedException {
+        return ResponseEntity.ok(shareService.getAllAvailableShares(lat, lon, radiusKm));
     }
-
 
     // 공유하는 충전기 상태 변경
     @PatchMapping("/{uid}/{shareId}/status")
