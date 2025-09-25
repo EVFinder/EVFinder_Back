@@ -54,9 +54,17 @@ public class ReserveService {
         }
 
         // 3. 시간이 겹치지 않으면 예약 등록
+         DocumentReference reserveRef = db.collection("users")
+            .document(uid)
+            .collection("reserve")
+            .document();
+
+        reserve.setId(reserveRef.getId());
         reserve.setCreatedAt(Timestamp.now());
-        ApiFuture<DocumentReference> newReserve =
-                db.collection("users").document(uid).collection("reserve").add(reserve);
+
+        // ApiFuture<DocumentReference> newReserve =
+        //         db.collection("users").document(uid).collection("reserve").add(reserve);
+        reserveRef.set(reserve).get();
 
         // 4. 현재 시간 기준으로 상태 업데이트
         Timestamp now = Timestamp.now();
@@ -64,7 +72,7 @@ public class ReserveService {
             updateShareStatus(reserve.getOwnerUid(), reserve.getShareId(), "reserved");
         }
 
-        return newReserve.get().getId();
+        return reserveRef.getId();
     }
 
     // // 예약 추가 (겹침 검사 포함)

@@ -25,6 +25,7 @@ public class ShareService {
         Firestore db = firestore;
 
         share.setCreatedAt(Timestamp.now());
+        share.setOwnerUid(uid);
         
         if (share.getStatus() == null) {
             share.setStatus("available");
@@ -72,6 +73,13 @@ public class ShareService {
             ShareDTO share = doc.toObject(ShareDTO.class);
             if (share != null) {
                 share.setId(doc.getId());
+
+            String path = doc.getReference().getPath(); 
+            String[] parts = path.split("/");
+            if (parts.length >= 2) {
+                String ownerUid = parts[1]; // "users/{ownerUid}/share/{shareId}" → index 1 이 ownerUid
+                share.setOwnerUid(ownerUid);
+            }
 
                 double distance = haversine(userLat, userLon, share.getLat(), share.getLon());
                 if (distance <= radiusKm) {

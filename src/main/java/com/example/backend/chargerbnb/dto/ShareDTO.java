@@ -14,6 +14,8 @@ public class ShareDTO {
     
     private String id; // 파이어베이스
     
+    private String ownerUid;  // 공유 충전기 등록자
+
     private String address;
     private double lat;
     private double lon;
