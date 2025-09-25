@@ -13,7 +13,6 @@ import lombok.Setter;
 @Setter
 public class ReserveDTO {
     
-    @JsonIgnore
     private String id;
     
     private String shareId;
