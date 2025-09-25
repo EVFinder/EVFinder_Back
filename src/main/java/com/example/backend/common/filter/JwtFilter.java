@@ -40,6 +40,8 @@ public class JwtFilter extends OncePerRequestFilter {
                 Claims claims = jwtUtil.parseClaims(token);
                 String uid = claims.getSubject();      // sub = uid
                 String email = (String) claims.get("email");
+                String name = (String) claims.get("name");
+                String role = (String) claims.get("role");
 
                 // 3. SecurityContext에 사용자 등록
                 UsernamePasswordAuthenticationToken authentication =
@@ -48,7 +50,12 @@ public class JwtFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                System.out.println("JWT 인증 성공: uid=" + uid + ", email=" + email);
+                request.setAttribute("uid", uid);
+                request.setAttribute("email", email);
+                request.setAttribute("name", name);
+                request.setAttribute("role", role);
+
+                System.out.println("JWT 인증 성공: uid=" + uid + ", email=" + email + ", name=" + name);
 
             } catch (Exception e) {
                 System.err.println("JWT 인증 실패: " + e.getMessage());

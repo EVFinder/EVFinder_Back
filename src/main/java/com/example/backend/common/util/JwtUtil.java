@@ -23,16 +23,16 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    //토큰 발급
-    public String generateToken(String uid, String email) {
+    // 토큰 발급 (uid, email, name 포함)
+    public String generateToken(String uid, String email, String name, String role) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expirationMs);
 
-        Key key = Keys.hmacShaKeyFor(secret.getBytes());
-
         return Jwts.builder()
-                .setSubject(uid)
+                .setSubject(uid) // sub = uid
                 .claim("email", email)
+                .claim("name", name)
+                .claim("role", role)
                 .setIssuedAt(now)
                 .setExpiration(expiry)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
@@ -56,6 +56,16 @@ public class JwtUtil {
     public String getEmail(String token){
         Object email = parseClaims(token).get("email");
         return email!=null ? email.toString() : null;
+    }
+
+    public String getName(String token) {
+        Object name = parseClaims(token).get("name");
+        return name != null ? name.toString() : null;
+    }
+
+    public String getRole(String token) {
+        Object role = parseClaims(token).get("role");
+        return role != null ? role.toString() : "USER";
     }
 
     //토큰 만료 여부 체크
