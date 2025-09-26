@@ -8,7 +8,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class WeatherDTO {
-    private String description; // 날씨 설명
+    private String main; // 간략 날씨 설명
+    private String description; // 상세 날씨 설명
     private double temperature; // 기온
     private double feelsLike;   // 체감온도
     private int humidity;       // 습도

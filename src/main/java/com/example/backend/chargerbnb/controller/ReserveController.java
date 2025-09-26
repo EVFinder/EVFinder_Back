@@ -43,7 +43,7 @@ public class ReserveController {
 
     // 예약 조회
     @GetMapping("/{uid}")
-    public ResponseEntity<List<ReserveDTO>> getReserves(@PathVariable String uid)
+    public ResponseEntity<List<Map<String, Object>>> getReserves(@PathVariable String uid)
             throws ExecutionException, InterruptedException {
         return ResponseEntity.ok(reserveService.getReservesByUser(uid));
     }
@@ -65,6 +65,14 @@ public class ReserveController {
             ));
         }
     }
+
+    // 개별 충전소에 있는 예약 정보
+    @GetMapping("share/{shareId}")
+    public ResponseEntity<List<ReserveDTO>> getReservesByShare(@PathVariable String shareId)
+            throws ExecutionException, InterruptedException {
+        return ResponseEntity.ok(reserveService.getReservesByShare(shareId));
+    }
+
 
     // 예약 수정
     @PutMapping("/{uid}/{reserveId}")

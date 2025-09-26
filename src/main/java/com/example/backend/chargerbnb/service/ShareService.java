@@ -1,5 +1,6 @@
 package com.example.backend.chargerbnb.service;
 
+import com.example.backend.chargerbnb.dto.ReserveDTO;
 import com.example.backend.chargerbnb.dto.ShareDTO;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.Timestamp;

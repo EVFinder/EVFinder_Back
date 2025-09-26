@@ -1,5 +1,6 @@
 package com.example.backend.chargerbnb.controller;
 
+import com.example.backend.chargerbnb.dto.ReserveDTO;
 import com.example.backend.chargerbnb.dto.ShareDTO;
 import com.example.backend.chargerbnb.service.ShareService;
 
@@ -35,6 +36,7 @@ public class ShareController {
         return ResponseEntity.ok(shareService.getSharesByUser(uid));
     }
 
+    // 사용자 기준 예약 가능한 모든 충전기 조회(기본 반경 5km)
     @GetMapping("/all")
     public ResponseEntity<List<ShareDTO>> getAllShares(
             @RequestParam double lat,
@@ -43,7 +45,7 @@ public class ShareController {
     ) throws ExecutionException, InterruptedException {
         return ResponseEntity.ok(shareService.getAllAvailableShares(lat, lon, radiusKm));
     }
-
+    
     // 공유하는 충전기 상태 변경
     @PatchMapping("/{uid}/{shareId}/status")
     public ResponseEntity<String> updateShareStatus(

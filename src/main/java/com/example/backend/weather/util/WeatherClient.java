@@ -15,7 +15,7 @@ public class WeatherClient {
     private String apiKey; 
 
     private static final String BASE_URL =
-            "https://api.openweathermap.org/data/2.5/weather?lat=%f&lon=%f&units=metric&appid=%s&lang=kr";
+            "https://api.openweathermap.org/data/2.5/weather?lat=%f&lon=%f&units=metric&appid=%s";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -28,11 +28,12 @@ public class WeatherClient {
         JsonNode root = objectMapper.readTree(response);
 
         // JSON 파싱
+        String main = root.path("weather").get(0).path("main").asText();
         String description = root.path("weather").get(0).path("description").asText();
         double temp = root.path("main").path("temp").asDouble();
         double feelsLike = root.path("main").path("feels_like").asDouble();
         int humidity = root.path("main").path("humidity").asInt();
 
-        return new WeatherDTO(description, temp, feelsLike, humidity);
+        return new WeatherDTO(main ,description, temp, feelsLike, humidity);
     }
 }
