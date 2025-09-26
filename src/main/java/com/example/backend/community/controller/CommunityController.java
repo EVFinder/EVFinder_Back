@@ -1,7 +1,10 @@
 package com.example.backend.community.controller;
 
 import com.example.backend.community.dto.*;
-import com.example.backend.community.service.CommunityService;
+import com.example.backend.community.service.PostService;
+import com.example.backend.community.service.CommentService;
+import com.example.backend.community.service.CategoryService;
+
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -14,7 +17,9 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class CommunityController {
 
-    private final CommunityService communityService;
+    private final PostService postService;
+    private final CommentService commentService;
+    private final CategoryService categoryService;
 
     // =========게시글========
     //게시글 작성
@@ -25,16 +30,16 @@ public class CommunityController {
             @RequestAttribute("uid") String uid,
             @RequestAttribute("name") String authorName   // JWT 필터에서 name도 넣어주면 좋음
     ) throws Exception {
-        return ResponseEntity.ok(communityService.createPost(categoryId, request, uid, authorName));
+        return ResponseEntity.ok(postService.createPost(categoryId, request, uid, authorName));
     }
 
     //게시글 목록 조회
     @GetMapping("/categories/{categoryId}/posts/list")
-    public ResponseEntity<List<PostResponse>> getPostsByCategory(
+    public ResponseEntity<List<PostSummaryResponse>> getPostsByCategory(
             @PathVariable String categoryId,
             @RequestAttribute("uid") String uid
     ) throws Exception {
-        return ResponseEntity.ok(communityService.getPostsByCategory(categoryId, uid));
+        return ResponseEntity.ok(postService.getPostSummariesByCategory(categoryId, uid));
     }
 
     //게시글 상세 조회
@@ -44,7 +49,15 @@ public class CommunityController {
             @PathVariable String postId,
             @RequestAttribute("uid") String uid
     ) throws Exception {
-        return ResponseEntity.ok(communityService.getPost(categoryId, postId, uid));
+        return ResponseEntity.ok(postService.getPost(categoryId, postId, uid));
+    }
+
+    // 내가 작성한 게시글 조회
+    @GetMapping("/my/posts")
+    public ResponseEntity<List<PostSummaryResponse>> getMyPosts(
+            @RequestAttribute("uid") String uid
+    ) throws Exception {
+        return ResponseEntity.ok(postService.getMyPosts(uid));
     }
 
     //게시글 수정
@@ -55,7 +68,7 @@ public class CommunityController {
             @RequestBody PostRequest request,
             @RequestAttribute("uid") String uid
     ) throws Exception {
-        return ResponseEntity.ok(communityService.updatePost(categoryId, postId, request, uid));
+        return ResponseEntity.ok(postService.updatePost(categoryId, postId, request, uid));
     }
 
     //게시글 삭제
@@ -65,7 +78,7 @@ public class CommunityController {
             @PathVariable String postId,
             @RequestAttribute("uid") String uid
     ) throws Exception {
-        communityService.deletePost(categoryId, postId, uid);
+        postService.deletePost(categoryId, postId, uid);
         return ResponseEntity.noContent().build();
     }
 
@@ -79,7 +92,7 @@ public class CommunityController {
             @RequestAttribute("uid") String uid,
             @RequestAttribute("name") String authorName
     ) throws Exception {
-        return ResponseEntity.ok(communityService.createComment(categoryId, postId, request, uid, authorName));
+        return ResponseEntity.ok(commentService.createComment(categoryId, postId, request, uid, authorName));
     }
 
     //댓글 목록 조회
@@ -89,7 +102,15 @@ public class CommunityController {
             @PathVariable String postId,
             @RequestAttribute("uid") String uid
     ) throws Exception {
-        return ResponseEntity.ok(communityService.getCommentsByPost(categoryId, postId, uid));
+        return ResponseEntity.ok(commentService.getCommentsByPost(categoryId, postId, uid));
+    }
+
+    // 내가 작성한 댓글 조회
+    @GetMapping("/my/comments")
+    public ResponseEntity<List<CommentResponse>> getMyComments(
+            @RequestAttribute("uid") String uid
+    ) throws Exception {
+        return ResponseEntity.ok(commentService.getMyComments(uid));
     }
 
     //댓글 수정
@@ -101,7 +122,7 @@ public class CommunityController {
             @RequestBody CommentRequest request,
             @RequestAttribute("uid") String uid
     ) throws Exception {
-        return ResponseEntity.ok(communityService.updateComment(categoryId, postId, commentId, request, uid));
+        return ResponseEntity.ok(commentService.updateComment(categoryId, postId, commentId, request, uid));
     }
 
     //댓글 삭제
@@ -112,7 +133,7 @@ public class CommunityController {
             @PathVariable String commentId,
             @RequestAttribute("uid") String uid
     ) throws Exception {
-        communityService.deleteComment(categoryId, postId, commentId, uid);
+        commentService.deleteComment(categoryId, postId, commentId, uid);
         return ResponseEntity.noContent().build();
     }
 
@@ -126,15 +147,14 @@ public class CommunityController {
         if (!"ADMIN".equals(role)) {
             throw new SecurityException("관리자만 카테고리 생성이 가능합니다.");
         }
-        return ResponseEntity.ok(communityService.createCategory(request));
+        return ResponseEntity.ok(categoryService.createCategory(request));
     }
 
     //카테고리 목록 조회
     @GetMapping("/categories")
     public ResponseEntity<List<CategoryResponse>> getCategories() throws Exception {
-        return ResponseEntity.ok(communityService.getCategories());
+        return ResponseEntity.ok(categoryService.getCategories());
     }
-
 
     //카테고리 수정
     @PutMapping("/categories/{categoryId}")
@@ -146,7 +166,7 @@ public class CommunityController {
         if (!"ADMIN".equals(role)) {
             throw new SecurityException("관리자만 카테고리 수정이 가능합니다.");
         }
-        return ResponseEntity.ok(communityService.updateCategory(categoryId, request));
+        return ResponseEntity.ok(categoryService.updateCategory(categoryId, request));
     }
 
     //카테고리 삭제
@@ -158,7 +178,7 @@ public class CommunityController {
         if (!"ADMIN".equals(role)) {
             throw new SecurityException("관리자만 카테고리 삭제가 가능합니다.");
         }
-        communityService.deleteCategory(categoryId);
+        categoryService.deleteCategory(categoryId);
         return ResponseEntity.noContent().build();
     }
 }
