@@ -43,6 +43,7 @@ public class AuthService {
 
             String uid = userRecord.getUid();
             String email = userRecord.getEmail();
+            String role = "USER";
 
             DocumentReference userRef = firestore.collection("users").document(uid);
 
@@ -55,11 +56,12 @@ public class AuthService {
             userData.put("email", email);
             userData.put("userName", request.getUserName());
             userData.put("createdAt", Timestamp.now());
+            userData.put("role", role);
 
             //찍고, .get으로 가져오기
             userRef.set(userData).get();
 
-            String jwt = jwtUtil.generateToken(uid, email);
+            String jwt = jwtUtil.generateToken(uid, email, request.getUserName(), role);
 
             return new SignupResponse(uid, email, request.getUserName(), jwt);
 
@@ -103,9 +105,10 @@ public class AuthService {
             // 2. Firestore에서 userName 가져오기 (Bean 사용)
             DocumentSnapshot snapshot = firestore.collection("users").document(uid).get().get();
             String userName = snapshot.contains("userName") ? snapshot.getString("userName") : "사용자";
+            String role = snapshot.contains("role") ? snapshot.getString("role") : "USER";
 
             // 3. JWT 발급
-            String jwt = jwtUtil.generateToken(uid, email);
+            String jwt = jwtUtil.generateToken(uid, email,userName, role);
 
             return new LoginResponse(uid, email, userName, jwt);
 
