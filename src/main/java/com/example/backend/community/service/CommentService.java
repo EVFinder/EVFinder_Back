@@ -63,6 +63,41 @@ public class CommentService {
                 .build();
     }
 
+    // 단일 댓글 조회
+    public CommentResponse getCommentById(String categoryId, String postId, String commentId, String uid) throws Exception {
+        DocumentReference commentRef = firestore.collection("community")
+                .document("categories")
+                .collection("items")
+                .document(categoryId)
+                .collection("posts")
+                .document(postId)
+                .collection("comments")
+                .document(commentId);
+
+        DocumentSnapshot snapshot = commentRef.get().get();
+        if (!snapshot.exists()) {
+            throw new IllegalStateException("댓글이 존재하지 않습니다.");
+        }
+
+        Map<String, Object> data = snapshot.getData();
+        if (data == null) {
+            throw new IllegalStateException("댓글 데이터가 비어있습니다.");
+        }
+
+        String authorUid = (String) data.get("uid");
+
+        return CommentResponse.builder()
+                .commentId(snapshot.getId())
+                .content((String) data.get("content"))
+                .uid(authorUid)
+                .authorName((String) data.get("authorName"))
+                .parentId((String) data.get("parentId"))
+                .createdAt((Timestamp) data.get("createdAt"))
+                .updatedAt((Timestamp) data.get("updatedAt"))
+                .isOwner(uid.equals(authorUid))
+                .build();
+    }
+
     // 댓글 목록 조회
     public List<CommentResponse> getCommentsByPost(String categoryId, String postId, String uid) throws Exception {
         CollectionReference commentsRef = firestore.collection("community")

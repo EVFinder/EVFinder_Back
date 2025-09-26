@@ -2,12 +2,15 @@ package com.example.backend.community.controller;
 
 import com.example.backend.community.dto.*;
 import com.example.backend.community.service.PostService;
+import com.google.cloud.firestore.DocumentReference;
+import com.google.cloud.firestore.DocumentSnapshot;
 import com.example.backend.community.service.CommentService;
 import com.example.backend.community.service.CategoryService;
 
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -93,6 +96,17 @@ public class CommunityController {
             @RequestAttribute("name") String authorName
     ) throws Exception {
         return ResponseEntity.ok(commentService.createComment(categoryId, postId, request, uid, authorName));
+    }
+
+    // 단일 댓글 조회
+    @GetMapping("/categories/{categoryId}/posts/{postId}/comments/{commentId}")
+    public ResponseEntity<CommentResponse> getCommentById(
+            @PathVariable String categoryId,
+            @PathVariable String postId,
+            @PathVariable String commentId,
+            @RequestAttribute("uid") String uid
+    ) throws Exception {
+        return ResponseEntity.ok(commentService.getCommentById(categoryId, postId, commentId, uid));
     }
 
     //댓글 목록 조회
