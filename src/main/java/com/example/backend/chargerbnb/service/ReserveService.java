@@ -6,6 +6,7 @@ import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.*;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -182,6 +183,27 @@ public class ReserveService {
         } else {
             updateShareStatus(existing.getOwnerUid(), existing.getShareId(), "available");
         }
+    }
+
+    public List<ReserveDTO> getReservesByShare(String shareId) throws ExecutionException, InterruptedException {
+        Firestore db = firestore;
+
+        ApiFuture<QuerySnapshot> future = db.collectionGroup("reserve")
+                .whereEqualTo("shareId", shareId)
+                .get();
+
+        List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+        List<ReserveDTO> reserves = new ArrayList<>();
+
+        for (QueryDocumentSnapshot doc : documents) {
+            ReserveDTO reserve = doc.toObject(ReserveDTO.class);
+
+            reserve.setId(doc.getId());
+
+            reserves.add(reserve);
+        }
+
+        return reserves;
     }
 
     // share 상태 업데이트 (ownerUid 기반)

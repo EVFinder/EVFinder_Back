@@ -66,6 +66,14 @@ public class ReserveController {
         }
     }
 
+    // 개별 충전소에 있는 예약 정보
+    @GetMapping("share/{shareId}")
+    public ResponseEntity<List<ReserveDTO>> getReservesByShare(@PathVariable String shareId)
+            throws ExecutionException, InterruptedException {
+        return ResponseEntity.ok(reserveService.getReservesByShare(shareId));
+    }
+
+
     // 예약 수정
     @PutMapping("/{uid}/{reserveId}")
     public ResponseEntity<?> updateReserve(
