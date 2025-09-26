@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.example.backend.place.dto.AddressDTO;
 import com.example.backend.place.dto.PlaceDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -60,6 +61,33 @@ public class PlaceClient {
                 results.add(dto);
             }
             return results;
+        }
+    }
+    // 좌표 → 주소 변환
+    public AddressDTO getAddressFromCoordinates(String x, String y) throws Exception {
+        String apiUrl = "https://dapi.kakao.com/v2/local/geo/coord2address.json?x=" + x + "&y=" + y;
+
+        HttpURLConnection conn = (HttpURLConnection) new URL(apiUrl).openConnection();
+        conn.setRequestMethod("GET");
+        conn.setRequestProperty("Authorization", "KakaoAK " + kakaoApiKey);
+        conn.setRequestProperty("Accept", "application/json");
+
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+            String response = br.lines().collect(Collectors.joining());
+            Map<String, Object> fullJson = mapper.readValue(response, Map.class);
+
+            List<Map<String, Object>> documents = (List<Map<String, Object>>) fullJson.get("documents");
+            if (documents == null || documents.isEmpty()) {
+                throw new Exception("주소 정보를 찾을 수 없습니다.");
+            }
+
+            Map<String, Object> doc = documents.get(0);
+            Map<String, Object> roadObj = (Map<String, Object>) doc.get("road_address");
+
+            if (roadObj == null) {
+                throw new Exception("도로명 주소를 찾을 수 없습니다.");
+            }
+            return new AddressDTO((String) roadObj.get("address_name"));
         }
     }
 }

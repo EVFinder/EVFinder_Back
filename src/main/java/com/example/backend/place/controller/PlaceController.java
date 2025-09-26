@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.backend.place.dto.AddressDTO;
 import com.example.backend.place.dto.PlaceDTO;
 import com.example.backend.place.service.PlaceService;
 
@@ -27,6 +28,16 @@ public class PlaceController {
         try {
             List<PlaceDTO> places = placeService.getPlaceListByKeyword(query);
             return ResponseEntity.ok(places);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/address")
+    public ResponseEntity<?> coordsToAddress(@RequestParam String x, @RequestParam String y) {
+        try {
+            AddressDTO addr = placeService.getAddressByCoordinates(x, y);
+            return ResponseEntity.ok(addr);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }

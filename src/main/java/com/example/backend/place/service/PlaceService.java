@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.example.backend.place.dto.AddressDTO;
 import com.example.backend.place.dto.PlaceDTO;
 import com.example.backend.place.util.PlaceClient;
 
@@ -18,5 +19,9 @@ public class PlaceService {
 
     public List<PlaceDTO> getPlaceListByKeyword(String query) throws Exception {
         return placeClient.searchPlaces(query);
+    }
+
+    public AddressDTO getAddressByCoordinates(String x, String y) throws Exception {
+        return placeClient.getAddressFromCoordinates(x, y);
     }
 }
