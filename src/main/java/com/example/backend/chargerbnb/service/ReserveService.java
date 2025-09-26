@@ -1,13 +1,16 @@
 package com.example.backend.chargerbnb.service;
 
 import com.example.backend.chargerbnb.dto.ReserveDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.*;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 @Service
@@ -110,11 +113,48 @@ public class ReserveService {
     // }
 
     // 예약 조회
-    public List<ReserveDTO> getReservesByUser(String uid) throws ExecutionException, InterruptedException {
-        ApiFuture<QuerySnapshot> future =
-                firestore.collection("users").document(uid).collection("reserve").get();
+    public List<Map<String, Object>> getReservesByUser(String uid) throws ExecutionException, InterruptedException {
+        Firestore db = firestore;
 
-        return future.get().toObjects(ReserveDTO.class);
+        // 유저의 예약 목록 가져오기
+        ApiFuture<QuerySnapshot> future =
+                db.collection("users").document(uid).collection("reserve").get();
+
+        List<QueryDocumentSnapshot> docs = future.get().getDocuments();
+        List<Map<String, Object>> results = new ArrayList<>();
+
+        for (QueryDocumentSnapshot doc : docs) {
+            
+            ReserveDTO reserve = doc.toObject(ReserveDTO.class);
+            reserve.setId(doc.getId());
+
+            // DTO -> Map 변환
+            Map<String, Object> data = new HashMap<>();
+            data.putAll(new ObjectMapper().convertValue(reserve, Map.class));
+
+            String ownerUid = reserve.getOwnerUid();
+            String shareId = reserve.getShareId();
+
+            if (ownerUid != null && shareId != null) {
+                DocumentReference shareRef = db.collection("users")
+                        .document(ownerUid)
+                        .collection("share")
+                        .document(shareId);
+
+                DocumentSnapshot shareDoc = shareRef.get().get();
+                if (shareDoc.exists()) {
+                    Map<String, Object> shareData = shareDoc.getData();
+                    if (shareData != null) {
+                        data.put("stationName", shareData.get("stationName"));
+                        data.put("address", shareData.get("address"));
+                        data.put("ownerName", shareData.get("hostName"));
+                        data.put("ownerContact", shareData.get("hostContact"));
+                    }
+                }
+            }
+            results.add(data);
+        }
+        return results;
     }
 
     // 예약 취소

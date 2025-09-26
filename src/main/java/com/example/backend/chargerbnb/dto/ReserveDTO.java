@@ -2,7 +2,6 @@ package com.example.backend.chargerbnb.dto;
 
 import com.example.backend.common.json.TimestampDeserializer;
 import com.example.backend.common.json.TimestampSerializer;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.cloud.Timestamp;

@@ -43,7 +43,7 @@ public class ReserveController {
 
     // 예약 조회
     @GetMapping("/{uid}")
-    public ResponseEntity<List<ReserveDTO>> getReserves(@PathVariable String uid)
+    public ResponseEntity<List<Map<String, Object>>> getReserves(@PathVariable String uid)
             throws ExecutionException, InterruptedException {
         return ResponseEntity.ok(reserveService.getReservesByUser(uid));
     }
