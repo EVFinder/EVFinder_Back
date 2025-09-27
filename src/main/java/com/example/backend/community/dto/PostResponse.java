@@ -19,6 +19,8 @@ public class PostResponse {
     private int likes;          // 좋아요 수
     private boolean isOwner;    // JWT.uid == post.uid ? true : false
 
+    private boolean isLiked;    // 현재 사용자가 좋아요 눌렀는지 여부
+
     @JsonSerialize(using = TimestampSerializer.class)
     private Timestamp createdAt; // 최초 작성 시각
 
