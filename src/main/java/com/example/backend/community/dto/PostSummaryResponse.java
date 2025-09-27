@@ -12,5 +12,9 @@ public class PostSummaryResponse {
     private String postId;
     private String title;
     private String authorName;
+
+    private int views;   // 조회수
+    private int likes;   // 좋아요 수
+
     private String createdAt;
 }

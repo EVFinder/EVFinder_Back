@@ -163,10 +163,15 @@ public class PostService {
 
                 List<PostSummaryResponse> summaries = new ArrayList<>();
                 for (QueryDocumentSnapshot doc : documents) {
+                        Long views = doc.contains("views") ? doc.getLong("views") : 0L;
+                        Long likes = doc.contains("likes") ? doc.getLong("likes") : 0L;
+
                         summaries.add(PostSummaryResponse.builder()
                                 .postId(doc.getId())
                                 .title(doc.getString("title"))
                                 .authorName(doc.getString("authorName"))
+                                .views(views != null ? views.intValue() : 0)
+                                .likes(likes != null ? likes.intValue() : 0)
                                 .createdAt(doc.get("createdAt") != null ? doc.get("createdAt").toString() : null)
                                 .build()
                         );
