@@ -160,18 +160,26 @@ public class PostService {
                         .collection("posts");
 
                 List<QueryDocumentSnapshot> documents = postsRef.get().get().getDocuments();
-
                 List<PostSummaryResponse> summaries = new ArrayList<>();
+
                 for (QueryDocumentSnapshot doc : documents) {
+                        String postId = doc.getId();
+
                         Long views = doc.contains("views") ? doc.getLong("views") : 0L;
                         Long likes = doc.contains("likes") ? doc.getLong("likes") : 0L;
-
+                        
+                        int commentCount = postsRef.document(postId)
+                                .collection("comments")
+                                .get().get()
+                                .size();
+                        
                         summaries.add(PostSummaryResponse.builder()
                                 .postId(doc.getId())
                                 .title(doc.getString("title"))
                                 .authorName(doc.getString("authorName"))
                                 .views(views != null ? views.intValue() : 0)
                                 .likes(likes != null ? likes.intValue() : 0)
+                                .comments(commentCount) 
                                 .createdAt(doc.get("createdAt") != null ? doc.get("createdAt").toString() : null)
                                 .build()
                         );
@@ -190,16 +198,31 @@ public class PostService {
                 List<PostSummaryResponse> myPosts = new ArrayList<>();
 
                 for (DocumentReference categoryRef : categoriesRef.listDocuments()) {
+                        String categoryId = categoryRef.getId();
                         CollectionReference postsRef = categoryRef.collection("posts");
                         List<QueryDocumentSnapshot> docs = postsRef.whereEqualTo("uid", uid).get().get().getDocuments();
 
                         for (QueryDocumentSnapshot doc : docs) {
-                        myPosts.add(PostSummaryResponse.builder()
-                                .postId(doc.getId())
-                                .title(doc.getString("title"))
-                                .authorName(doc.getString("authorName"))
-                                .createdAt(doc.get("createdAt") != null ? doc.get("createdAt").toString() : null)
-                                .build());
+                                String postId = doc.getId();
+
+                                Long views = doc.contains("views") ? doc.getLong("views") : 0L;
+                                Long likes = doc.contains("likes") ? doc.getLong("likes") : 0L;
+
+                                int commentCount = postsRef.document(postId)
+                                        .collection("comments")
+                                        .get().get()
+                                        .size();
+                                
+                                myPosts.add(PostSummaryResponse.builder()
+                                        .postId(doc.getId())
+                                        .categoryId(categoryId)
+                                        .title(doc.getString("title"))
+                                        .authorName(doc.getString("authorName"))
+                                        .views(views != null ? views.intValue() : 0)
+                                        .likes(likes != null ? likes.intValue() : 0)
+                                        .comments(commentCount)
+                                        .createdAt(doc.get("createdAt") != null ? doc.get("createdAt").toString() : null)
+                                        .build());
                         }
                 }
                 return myPosts;

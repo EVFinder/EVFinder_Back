@@ -132,35 +132,41 @@ public class CommentService {
 
     // 내가 작성한 댓글
     public List<CommentResponse> getMyComments(String uid) throws Exception {
-            CollectionReference categoriesRef = firestore.collection("community")
-                    .document("categories")
-                    .collection("items");
+        CollectionReference userCommunityRef = firestore
+                .collection("users")
+                .document(uid)
+                .collection("community");
 
-            List<CommentResponse> myComments = new ArrayList<>();
+        List<CommentResponse> myComments = new ArrayList<>();
 
-            // 카테고리 전체 순회
-            for (DocumentReference categoryRef : categoriesRef.listDocuments()) {
-                    CollectionReference postsRef = categoryRef.collection("posts");
+        // categories 순회
+        for (DocumentReference categoryRef : userCommunityRef.listDocuments()) {
+                String categoryId = categoryRef.getId();
 
-                    for (DocumentReference postRef : postsRef.listDocuments()) {
-                        CollectionReference commentsRef = postRef.collection("comments");
-                        List<QueryDocumentSnapshot> docs = commentsRef.whereEqualTo("uid", uid).get().get().getDocuments();
+                CollectionReference postsRef = categoryRef.collection("posts");
+                for (DocumentReference postRef : postsRef.listDocuments()) {
+                String postId = postRef.getId();
 
-                        for (QueryDocumentSnapshot doc : docs) {
-                                myComments.add(CommentResponse.builder()
-                                        .commentId(doc.getId())
-                                        .content(doc.getString("content"))
-                                        .authorName(doc.getString("authorName"))
-                                        .createdAt(doc.get("createdAt") != null ? doc.getTimestamp("createdAt") : null)
-                                        .updatedAt(doc.get("updatedAt") != null ? doc.getTimestamp("updatedAt") : null)
-                                        .parentId(doc.getString("parentId"))
-                                        .uid(uid)
-                                        .isOwner(true)
-                                        .build());
-                        }
-                    }
-            }
-            return myComments;
+                CollectionReference commentsRef = postRef.collection("comments");
+                List<QueryDocumentSnapshot> docs = commentsRef.get().get().getDocuments();
+
+                for (QueryDocumentSnapshot doc : docs) {
+                        myComments.add(CommentResponse.builder()
+                                .commentId(doc.getId())
+                                .categoryId(categoryId)
+                                .postId(postId)
+                                .content(doc.getString("content"))
+                                .authorName(doc.getString("authorName"))
+                                .createdAt(doc.contains("createdAt") ? doc.getTimestamp("createdAt") : null)
+                                .updatedAt(doc.contains("updatedAt") ? doc.getTimestamp("updatedAt") : null)
+                                .parentId(doc.getString("parentId"))
+                                .uid(uid)
+                                .isOwner(true)
+                                .build());
+                }
+                }
+        }
+        return myComments;
     }
 
     //댓글 수정

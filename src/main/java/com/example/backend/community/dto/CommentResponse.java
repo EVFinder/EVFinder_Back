@@ -10,6 +10,8 @@ import lombok.Getter;
 @Builder
 public class CommentResponse {
     private String commentId;    // 댓글 ID
+    private String categoryId;
+    private String postId;
     private String content;      // 댓글 내용
     private String uid;          // 작성자 UID (내부 검증용)
     private String authorName;   // 작성자 이름
