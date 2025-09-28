@@ -120,4 +120,8 @@ public class AuthService {
             throw new RuntimeException("로그인 처리 중 서버 오류", e);
         }
     }
+
+    public String getRoleFromToken(String token) {
+        return jwtUtil.getRole(token); // 이미 JwtUtil에 구현됨
+    }
 }

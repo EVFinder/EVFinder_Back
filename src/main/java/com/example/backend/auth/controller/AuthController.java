@@ -2,6 +2,7 @@ package com.example.backend.auth.controller;
 
 import com.example.backend.auth.dto.LoginRequest;
 import com.example.backend.auth.dto.LoginResponse;
+import com.example.backend.auth.dto.RoleResponse;
 import com.example.backend.auth.dto.SignupRequest;
 import com.example.backend.auth.dto.SignupResponse;
 import com.example.backend.auth.service.AuthService;
@@ -51,6 +52,18 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("로그인 처리 중 오류 발생");
+        }
+    }
+
+    //역할 가져오기
+    @GetMapping("/role")
+    public ResponseEntity<RoleResponse> getRole(@RequestHeader("Authorization") String authHeader) {
+        try {
+            String token = authHeader.replace("Bearer ", "").trim();
+            String role = authService.getRoleFromToken(token);
+            return ResponseEntity.ok(new RoleResponse(role));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }
 }
