@@ -121,7 +121,47 @@ public class AuthService {
         }
     }
 
+    // 구글 로그인
+    public LoginResponse googleLogin(String idToken) throws Exception {
+        FirebaseToken decodedToken = firebaseAuth.verifyIdToken(idToken);
+        String uid = decodedToken.getUid();
+        String email = decodedToken.getEmail();
+        String name = decodedToken.getName(); // 구글 계정 이름
+        String role = "USER";
+
+        // Firestore 사용자 문서 확인/생성
+        DocumentReference userRef = firestore.collection("users").document(uid);
+        DocumentSnapshot snapshot = userRef.get().get();
+        if (!snapshot.exists()) {
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("email", email);
+            userData.put("userName", name);
+            userData.put("createdAt", Timestamp.now());
+            userData.put("role", role);
+            userRef.set(userData).get();
+        } else {
+            role = snapshot.contains("role") ? snapshot.getString("role") : "USER";
+        }
+
+        // JWT 발급
+        String jwt = jwtUtil.generateToken(uid, email, name, role);
+        return new LoginResponse(uid, email, name, jwt);
+    }
+
+    //역할 가져오기
     public String getRoleFromToken(String token) {
         return jwtUtil.getRole(token); // 이미 JwtUtil에 구현됨
+    }
+    
+    //비밀번호 재설정 링크
+    public String resetPassword(String email) throws Exception {
+        return firebaseAuth.generatePasswordResetLink(email);
+    }
+
+    //비밀번호 변경
+    public void updatePassword(String uid, String newPassword) throws Exception {
+        firebaseAuth.updateUser(
+            new UserRecord.UpdateRequest(uid).setPassword(newPassword)
+        );
     }
 }
