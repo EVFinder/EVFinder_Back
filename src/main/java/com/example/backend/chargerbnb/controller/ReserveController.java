@@ -73,7 +73,6 @@ public class ReserveController {
         return ResponseEntity.ok(reserveService.getReservesByShare(shareId));
     }
 
-
     // 예약 수정
     @PutMapping("/{uid}/{reserveId}")
     public ResponseEntity<?> updateReserve(
