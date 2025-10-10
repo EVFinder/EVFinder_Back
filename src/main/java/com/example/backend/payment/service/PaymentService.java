@@ -38,9 +38,9 @@ public class PaymentService {
             orderId,
             dto.getItemName(),
             dto.getAmount(),
-            "evfinder://kakaopay?result=success&uid=" + dto.getUid() + "&orderId=" + orderId,
-            "evfinder://kakaopay?result=cancel&uid=" + dto.getUid(),
-            "evfinder://kakaopay?result=fail&uid=" + dto.getUid()
+            "http://localhost:8080?result=success&uid=" + dto.getUid() + "&orderId=" + orderId,
+            "http://localhost:8080?result=cancel&uid=" + dto.getUid(),
+            "http://localhost:8080?result=fail&uid=" + dto.getUid()
         );
 
 
