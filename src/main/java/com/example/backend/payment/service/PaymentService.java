@@ -38,9 +38,9 @@ public class PaymentService {
             orderId,
             dto.getItemName(),
             dto.getAmount(),
-            "http://100.100.101.97:8080/success.html?result=success", // 실제 서버 ip주소로 변경 필요
-            "http://100.100.101.97:8080?result=cancel",
-            "http://100.100.101.97:8080?result=fail"
+            "http://100.100.101.97:8080/success.html?status=success", // 실제 서버 ip주소로 변경 필요
+            "http://100.100.101.97:8080?status=cancel",
+            "http://100.100.101.97:8080?status=fail"
         );
 
         String tid = (String) kakaoResponse.get("tid");
@@ -65,17 +65,25 @@ public class PaymentService {
 
     // 결제 승인
     public Map<String, Object> approvePayment(String uid, String orderId, String tid, String pgToken) throws Exception {
+        // 승인 요청
         Map<String, Object> approvalResponse = kakaoPayClient.approvePayment(tid, uid, orderId, pgToken);
 
+        // 결제 데이터 생성
         Map<String, Object> paymentData = new HashMap<>();
-        paymentData.put("uid", uid);
-        paymentData.put("orderId", orderId);
-        paymentData.put("paymentId", tid);
-        paymentData.put("status", "SUCCESS");
-        paymentData.put("approvedAt", LocalDateTime.now().toString());
+        paymentData.put("paymentId", tid);               // Firestore 문서명
+        paymentData.put("orderId", orderId);             // 주문 번호
+        paymentData.put("status", "SUCCESS");            // 상태
+        paymentData.put("approvedAt", LocalDateTime.now().toString()); // 승인 시간
 
+        // uid null 체크
+        if (uid == null || uid.isEmpty()) {
+            throw new IllegalArgumentException("UID가 유효하지 않습니다.");
+        }
+
+        // Firestore에 저장 (users/{uid}/payments/{paymentId})
         paymentUtil.savePayment(uid, paymentData);
 
+        // 카카오 응답에도 메시지 추가
         approvalResponse.put("message", "결제 성공");
         return approvalResponse;
     }
