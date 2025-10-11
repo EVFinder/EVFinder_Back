@@ -39,8 +39,8 @@ public class PaymentService {
             dto.getItemName(),
             dto.getAmount(),
             "http://100.100.101.97:8080/success.html?status=success", // 실제 서버 ip주소로 변경 필요
-            "http://100.100.101.97:8080?status=cancel",
-            "http://100.100.101.97:8080?status=fail"
+            "http://100.100.101.97:8080/cancel.html?status=cancel",
+            "http://100.100.101.97:8080/fail.html?status=fail"
         );
 
         String tid = (String) kakaoResponse.get("tid");
@@ -91,9 +91,11 @@ public class PaymentService {
     // 결제 취소
     public Map<String, Object> cancelPayment(String uid, String tid) throws Exception {
         Map<String, Object> paymentData = new HashMap<>();
+        paymentData.put("paymentId", tid);
         paymentData.put("status", "CANCELLED");
-        paymentUtil.savePayment(uid, paymentData);
+        paymentData.put("cancelledAt", LocalDateTime.now().toString());
 
+        paymentUtil.savePayment(uid, paymentData); // Firestore에 상태 업데이트
         return Map.of("message", "결제 취소 완료", "status", "CANCELLED");
     }
 }
