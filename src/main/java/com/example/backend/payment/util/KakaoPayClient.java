@@ -16,7 +16,7 @@ public class KakaoPayClient {
 
     private static final String READY_URL = "https://open-api.kakaopay.com/online/v1/payment/ready";
     private static final String APPROVE_URL = "https://open-api.kakaopay.com/online/v1/payment/approve";
-
+    private static final String CANCEL_URL = "https://open-api.kakaopay.com/online/v1/payment";
     // 결제 요청
     public Map<String, Object> requestPayment(String uid, String orderId, String itemName, int amount,
                                               String approvalUrl, String cancelUrl, String failUrl) {
@@ -61,5 +61,22 @@ public class KakaoPayClient {
         return response.getBody();
     }
 
-    
+    public Map<String, Object> cancelPayment(String tid, int amount) {
+        String url = CANCEL_URL + "/cancel";
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("cid", "TC0ONETIME");
+        body.put("tid", tid);
+        body.put("cancel_amount", amount);
+        body.put("cancel_tax_free_amount", 0);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "SECRET_KEY " + secretKey);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        RestTemplate restTemplate = new RestTemplate();
+
+        return restTemplate.postForObject(url, request, Map.class);
+    }
 }

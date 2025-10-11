@@ -2,6 +2,8 @@ package com.example.backend.payment.util;
 
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.SetOptions;
+
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -22,7 +24,7 @@ public class PaymentUtil {
                 .document(uid)
                 .collection("payments")
                 .document((String) paymentData.getOrDefault("paymentId", "unknown"))
-                .set(paymentData)
+                .set(paymentData, SetOptions.merge())
                 .get();
     }
 
@@ -32,5 +34,9 @@ public class PaymentUtil {
                 .get()
                 .get();
         return snapshot.exists();
+    }
+
+    public Firestore getFirestore() {
+        return firestore;
     }
 }

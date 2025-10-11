@@ -3,7 +3,15 @@ package com.example.backend.payment.service;
 import com.example.backend.payment.util.KakaoPayClient;
 import com.example.backend.payment.dto.PaymentDTO;
 import com.example.backend.payment.util.PaymentUtil;
+import com.google.cloud.firestore.DocumentSnapshot;
+import com.google.cloud.firestore.Firestore;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -13,6 +21,9 @@ import java.util.concurrent.ExecutionException;
 
 @Service
 public class PaymentService {
+
+    //@Value("${kakao.api.secret-key}")
+    //private String secretKey;
 
     private final KakaoPayClient kakaoPayClient;
     private final PaymentUtil paymentUtil;
@@ -90,12 +101,42 @@ public class PaymentService {
 
     // 결제 취소
     public Map<String, Object> cancelPayment(String uid, String tid) throws Exception {
+
+        Firestore db = paymentUtil.getFirestore();
+
+        // Firestore에서 결제금액 조회
+        DocumentSnapshot paymentDoc = db.collection("users")
+                .document(uid)
+                .collection("payments")
+                .document(tid)
+                .get()
+                .get();
+
+        if (!paymentDoc.exists()) {
+            throw new IllegalArgumentException("결제내역이 존재하지 않습니다.");
+        }
+
+        int amount = paymentDoc.contains("amount") ? (int) paymentDoc.get("amount") : 0;
+
+        if (amount <= 0) {
+            throw new IllegalArgumentException("결제 금액이 유효하지 않습니다.");
+        }
+
+        // 카카오페이 결제취소 요청
+        Map<String, Object> kakaoResponse = kakaoPayClient.cancelPayment(tid, amount);
+
+        // Firestore 상태 갱신
         Map<String, Object> paymentData = new HashMap<>();
         paymentData.put("paymentId", tid);
         paymentData.put("status", "CANCELLED");
         paymentData.put("cancelledAt", LocalDateTime.now().toString());
+        paymentUtil.savePayment(uid, paymentData);
 
-        paymentUtil.savePayment(uid, paymentData); // Firestore에 상태 업데이트
-        return Map.of("message", "결제 취소 완료", "status", "CANCELLED");
+        return Map.of(
+                "message", "결제 취소 완료",
+                "status", "CANCELLED",
+                "cancel_amount", amount,
+                "kakaoResponse", kakaoResponse
+        );
     }
 }
