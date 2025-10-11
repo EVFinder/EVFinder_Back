@@ -38,9 +38,9 @@ public class PaymentService {
             orderId,
             dto.getItemName(),
             dto.getAmount(),
-            "http://localhost:8080?result=success&uid=" + dto.getUid() + "&orderId=" + orderId,
-            "http://localhost:8080?result=cancel&uid=" + dto.getUid(),
-            "http://localhost:8080?result=fail&uid=" + dto.getUid()
+            "http://100.100.101.97:8080/success.html?result=success", // 실제 서버 ip주소로 변경 필요
+            "http://100.100.101.97:8080?result=cancel",
+            "http://100.100.101.97:8080?result=fail"
         );
 
         String tid = (String) kakaoResponse.get("tid");
@@ -68,8 +68,12 @@ public class PaymentService {
         Map<String, Object> approvalResponse = kakaoPayClient.approvePayment(tid, uid, orderId, pgToken);
 
         Map<String, Object> paymentData = new HashMap<>();
+        paymentData.put("uid", uid);
+        paymentData.put("orderId", orderId);
+        paymentData.put("paymentId", tid);
         paymentData.put("status", "SUCCESS");
         paymentData.put("approvedAt", LocalDateTime.now().toString());
+
         paymentUtil.savePayment(uid, paymentData);
 
         approvalResponse.put("message", "결제 성공");
