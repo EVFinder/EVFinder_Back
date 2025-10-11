@@ -149,6 +149,7 @@ public class ReserveService {
                         data.put("address", shareData.get("address"));
                         data.put("ownerName", shareData.get("hostName"));
                         data.put("ownerContact", shareData.get("hostContact"));
+                        data.put("pricePerHour", shareData.get("pricePerHour"));
                     }
                 }
             }
