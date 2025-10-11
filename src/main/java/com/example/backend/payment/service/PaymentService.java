@@ -3,13 +3,19 @@ package com.example.backend.payment.service;
 import com.example.backend.payment.util.KakaoPayClient;
 import com.example.backend.payment.dto.PaymentDTO;
 import com.example.backend.payment.util.PaymentUtil;
+import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.QueryDocumentSnapshot;
+import com.google.cloud.firestore.QuerySnapshot;
+import com.google.cloud.firestore.Query;
 
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -54,6 +60,7 @@ public class PaymentService {
         Map<String, Object> paymentData = new HashMap<>();
         paymentData.put("paymentId", tid);
         paymentData.put("orderId", orderId);
+        paymentData.put("reserveId", dto.getReserveId());
         paymentData.put("itemName", dto.getItemName());
         paymentData.put("amount", dto.getAmount());
         paymentData.put("status", "READY");
@@ -64,6 +71,7 @@ public class PaymentService {
         response.put("tid", tid);
         response.put("uid", dto.getUid());
         response.put("orderId", orderId);
+        response.put("reserveId", dto.getReserveId());
         response.put("next_redirect_mobile_url", kakaoResponse.get("next_redirect_mobile_url"));
 
         return response;
@@ -134,4 +142,39 @@ public class PaymentService {
                 "cancel_amount", amount
         );
     }
+
+    // 결제 내역 조회
+    public List<Map<String, Object>> getPaymentHistory(String uid)
+            throws ExecutionException, InterruptedException {
+
+        Firestore db = paymentUtil.getFirestore();
+
+        // 해당 사용자의 모든 결제 문서 조회
+        ApiFuture<QuerySnapshot> future = db.collection("users")
+                .document(uid)
+                .collection("payments")
+                .orderBy("createdAt", Query.Direction.DESCENDING) // 최신순 정렬
+                .get();
+
+        List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        for (QueryDocumentSnapshot doc : documents) {
+            Map<String, Object> payment = new HashMap<>();
+            payment.put("paymentId", doc.getString("paymentId"));
+            payment.put("reserveId", doc.getString("reserveId"));
+            payment.put("orderId", doc.getString("orderId"));
+            payment.put("itemName", doc.getString("itemName"));
+            payment.put("amount", doc.get("amount"));
+            payment.put("status", doc.getString("status"));
+            payment.put("createdAt", doc.getString("createdAt"));
+            payment.put("approvedAt", doc.getString("approvedAt"));
+            payment.put("cancelledAt", doc.getString("cancelledAt"));
+            result.add(payment);
+        }
+
+        return result;
+    }
+
 }

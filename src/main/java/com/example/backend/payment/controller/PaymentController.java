@@ -5,6 +5,7 @@ import com.example.backend.payment.service.PaymentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -45,4 +46,13 @@ public class PaymentController {
         Map<String, Object> result = paymentService.cancelPayment(uid, tid);
         return ResponseEntity.ok(result);
     }
+
+    // 결제 내역 조회
+    @GetMapping("/history")
+    public ResponseEntity<?> getPaymentHistory(@RequestParam("uid") String uid)
+            throws ExecutionException, InterruptedException {
+        List<Map<String, Object>> history = paymentService.getPaymentHistory(uid);
+        return ResponseEntity.ok(history);
+    }
+    
 }

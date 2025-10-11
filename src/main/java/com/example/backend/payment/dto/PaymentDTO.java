@@ -11,4 +11,5 @@ public class PaymentDTO {
     private String uid;
     private String itemName;
     private int amount;
+    private String reserveId;
 }
