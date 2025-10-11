@@ -6,12 +6,7 @@ import com.example.backend.payment.util.PaymentUtil;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -116,7 +111,8 @@ public class PaymentService {
             throw new IllegalArgumentException("결제내역이 존재하지 않습니다.");
         }
 
-        int amount = paymentDoc.contains("amount") ? (int) paymentDoc.get("amount") : 0;
+        Number amountNum = (Number) paymentDoc.get("amount");
+        int amount = amountNum.intValue();
 
         if (amount <= 0) {
             throw new IllegalArgumentException("결제 금액이 유효하지 않습니다.");
@@ -135,8 +131,7 @@ public class PaymentService {
         return Map.of(
                 "message", "결제 취소 완료",
                 "status", "CANCELLED",
-                "cancel_amount", amount,
-                "kakaoResponse", kakaoResponse
+                "cancel_amount", amount
         );
     }
 }
