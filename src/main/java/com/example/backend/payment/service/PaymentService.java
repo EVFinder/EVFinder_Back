@@ -43,7 +43,6 @@ public class PaymentService {
             "http://localhost:8080?result=fail&uid=" + dto.getUid()
         );
 
-
         String tid = (String) kakaoResponse.get("tid");
 
         Map<String, Object> paymentData = new HashMap<>();
@@ -60,8 +59,6 @@ public class PaymentService {
         response.put("uid", dto.getUid());
         response.put("orderId", orderId);
         response.put("next_redirect_mobile_url", kakaoResponse.get("next_redirect_mobile_url"));
-        response.put("android_app_scheme", kakaoResponse.get("android_app_scheme"));
-        response.put("ios_app_scheme", kakaoResponse.get("ios_app_scheme"));
 
         return response;
     }
