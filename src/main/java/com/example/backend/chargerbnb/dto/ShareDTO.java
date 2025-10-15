@@ -1,5 +1,8 @@
 package com.example.backend.chargerbnb.dto;
 
+import java.util.List;
+import java.util.Map;
+
 import com.example.backend.common.json.TimestampDeserializer;
 import com.example.backend.common.json.TimestampSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -29,6 +32,11 @@ public class ShareDTO {
     private int pricePerHour;     // 시간당 가격
 
     private String status;        // available / reserved / unavailable
+
+    //요일, 시간, 날짜 추가
+    private List<String> availableDays; // 요일 기준
+    private Map<String, List<String>> availableHours; // 예: "MON": ["09:00-12:00", "13:00-18:00"]
+    private List<String> disabledDates; // 특정 날짜 제외
 
     @JsonSerialize(using = TimestampSerializer.class)
     @JsonDeserialize(using = TimestampDeserializer.class)

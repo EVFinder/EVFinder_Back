@@ -7,9 +7,13 @@ import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.*;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 @Service
@@ -116,5 +120,126 @@ public class ShareService {
                 firestore.collection("users").document(uid).collection("share").document(shareId);
 
         shareRef.update("status", status).get();
+    }
+
+    //비활성화 일자 정리
+    public int cleanupOldDisabledDates(String uid, String shareId)
+            throws ExecutionException, InterruptedException {
+
+        DocumentReference shareRef = firestore
+                .collection("users")
+                .document(uid)
+                .collection("share")
+                .document(shareId);
+
+        DocumentSnapshot doc = shareRef.get().get();
+        if (!doc.exists()) {
+            throw new IllegalArgumentException("해당 공유 충전소가 존재하지 않습니다.");
+        }
+
+        List<String> disabledDates = (List<String>) doc.get("disabledDates");
+        if (disabledDates == null || disabledDates.isEmpty()) {
+            return 0;
+        }
+
+        LocalDate cutoffDate = LocalDate.now().minusMonths(2).withDayOfMonth(1); // 저저번달 1일 이전
+        List<String> updated = new ArrayList<>();
+        int removedCount = 0;
+
+        for (String dateStr : disabledDates) {
+            try {
+                LocalDate date = LocalDate.parse(dateStr);
+                if (!date.isBefore(cutoffDate)) {
+                    updated.add(dateStr); // 유지
+                } else {
+                    removedCount++; // 삭제된 날짜
+                }
+            } catch (Exception ignored) {}
+        }
+
+        shareRef.update("disabledDates", updated).get();
+        return removedCount;
+    }
+
+    //사용 가능한 일자 가져오기
+    public Map<String, Object> getAvailability(String uid, String shareId)
+        throws ExecutionException, InterruptedException {
+
+    DocumentReference shareRef = firestore
+            .collection("users")
+            .document(uid)
+            .collection("share")
+            .document(shareId);
+
+    DocumentSnapshot doc = shareRef.get().get();
+        if (!doc.exists()) {
+            throw new IllegalArgumentException("해당 공유 충전소가 존재하지 않습니다.");
+        }
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("availableDays", doc.get("availableDays"));
+        data.put("availableHours", doc.get("availableHours"));
+        data.put("disabledDates", doc.get("disabledDates"));
+
+        return data;
+    }
+
+    //이용 불가한 일자 추가
+    public void addDisabledDates(String uid, String shareId, List<String> newDates)
+        throws ExecutionException, InterruptedException {
+
+        DocumentReference shareRef = firestore.collection("users")
+                .document(uid)
+                .collection("share")
+                .document(shareId);
+
+        DocumentSnapshot doc = shareRef.get().get();
+        if (!doc.exists()) {
+            throw new IllegalArgumentException("공유 충전소를 찾을 수 없습니다.");
+        }
+
+        List<String> existing = (List<String>) doc.get("disabledDates");
+        if (existing == null) existing = new ArrayList<>();
+
+        LocalDate today = LocalDate.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        for (String d : newDates) {
+            try {
+                LocalDate date = LocalDate.parse(d, formatter);
+
+                if (date.isBefore(today)) {
+                    throw new IllegalArgumentException("과거 날짜(" + d + ")는 추가할 수 없습니다.");
+                }
+
+                if (!existing.contains(d)) {
+                    existing.add(d);
+                }
+            } catch (Exception e) {
+                throw new IllegalArgumentException("잘못된 날짜 형식입니다: " + d + " (yyyy-MM-dd 형식이어야 합니다.)");
+            }
+        }
+
+        shareRef.update("disabledDates", existing).get();
+    }
+
+    // 이용 불가한 일자 삭제
+    public void removeDisabledDates(String uid, String shareId, List<String> datesToRemove)
+        throws ExecutionException, InterruptedException {
+
+        DocumentReference shareRef = firestore.collection("users")
+                .document(uid)
+                .collection("share")
+                .document(shareId);
+
+        DocumentSnapshot doc = shareRef.get().get();
+        if (!doc.exists()) throw new IllegalArgumentException("공유 충전소를 찾을 수 없습니다.");
+
+        List<String> existing = (List<String>) doc.get("disabledDates");
+        if (existing == null) return;
+
+        existing.removeAll(datesToRemove);
+
+        shareRef.update("disabledDates", existing).get();
     }
 }
