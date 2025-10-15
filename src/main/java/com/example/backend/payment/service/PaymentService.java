@@ -10,6 +10,7 @@ import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.cloud.firestore.QuerySnapshot;
 import com.google.cloud.firestore.Query;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -25,13 +26,17 @@ public class PaymentService {
 
     //@Value("${kakao.api.secret-key}")
     //private String secretKey;
-
+    @Value("${serverUrl}")
+    private String serverUrl;
+    
     private final KakaoPayClient kakaoPayClient;
     private final PaymentUtil paymentUtil;
+    private final NotificationService notificationService;
 
-    public PaymentService(KakaoPayClient kakaoPayClient, PaymentUtil paymentUtil) {
+    public PaymentService(KakaoPayClient kakaoPayClient, PaymentUtil paymentUtil, NotificationService notificationService) {
         this.kakaoPayClient = kakaoPayClient;
         this.paymentUtil = paymentUtil;
+        this.notificationService = notificationService;
     }
 
     // 결제 요청
@@ -50,9 +55,9 @@ public class PaymentService {
             orderId,
             dto.getItemName(),
             dto.getAmount(),
-            "http://100.100.101.97:8080/success.html?status=success", // 실제 서버 ip주소로 변경 필요
-            "http://100.100.101.97:8080/cancel.html?status=cancel",
-            "http://100.100.101.97:8080/fail.html?status=fail"
+            "http://"+serverUrl+"/success.html?status=success", // 실제 서버 ip주소로 변경 필요
+            "http://"+serverUrl+"/cancel.html?status=cancel",
+            "http://"+serverUrl+"/fail.html?status=fail"
         );
 
         String tid = (String) kakaoResponse.get("tid");
@@ -135,6 +140,32 @@ public class PaymentService {
         paymentData.put("status", "CANCELLED");
         paymentData.put("cancelledAt", LocalDateTime.now().toString());
         paymentUtil.savePayment(uid, paymentData);
+
+        String reserveId = paymentDoc.getString("reserveId");
+        if (reserveId != null && !reserveId.isEmpty()) {
+            // reserveId → shareId → ownerUid
+            ApiFuture<QuerySnapshot> reserveFuture = db.collectionGroup("reserve")
+                    .whereEqualTo("reserveId", reserveId)
+                    .get();
+
+            List<QueryDocumentSnapshot> reserves = reserveFuture.get().getDocuments();
+            if (!reserves.isEmpty()) {
+                String shareId = reserves.get(0).getString("shareId");
+
+                // shareId로 공유자 UID 찾기
+                ApiFuture<QuerySnapshot> shareFuture = db.collectionGroup("share")
+                        .whereEqualTo("shareId", shareId)
+                        .get();
+
+                List<QueryDocumentSnapshot> shares = shareFuture.get().getDocuments();
+                if (!shares.isEmpty()) {
+                    String ownerUid = shares.get(0).getReference().getParent().getParent().getId();
+
+                    // 공유자에게 FCM 발송
+                    notificationService.sendCancelNotification(ownerUid, shareId);
+                }
+            }
+        }
 
         return Map.of(
                 "message", "결제 취소 완료",
