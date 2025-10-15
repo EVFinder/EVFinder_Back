@@ -1,6 +1,5 @@
 package com.example.backend.chargerbnb.service;
 
-import com.example.backend.chargerbnb.dto.ReserveDTO;
 import com.example.backend.chargerbnb.dto.ShareDTO;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.Timestamp;
@@ -111,7 +110,6 @@ public class ShareService {
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
     }
-
 
     // 상태 업데이트 기능
     public void updateShareStatus(String uid, String shareId, String status)

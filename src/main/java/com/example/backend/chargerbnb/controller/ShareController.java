@@ -1,6 +1,5 @@
 package com.example.backend.chargerbnb.controller;
 
-import com.example.backend.chargerbnb.dto.ReserveDTO;
 import com.example.backend.chargerbnb.dto.ShareDTO;
 import com.example.backend.chargerbnb.service.ShareService;
 
