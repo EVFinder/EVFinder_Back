@@ -224,7 +224,7 @@ public class ShareService {
     }
 
     // 이용 불가한 일자 삭제
-    public void removeDisabledDates(String uid, String shareId, List<String> datesToRemove)
+    public int removeDisabledDates(String uid, String shareId, List<String> datesToRemove)
         throws ExecutionException, InterruptedException {
 
         DocumentReference shareRef = firestore.collection("users")
@@ -236,10 +236,22 @@ public class ShareService {
         if (!doc.exists()) throw new IllegalArgumentException("공유 충전소를 찾을 수 없습니다.");
 
         List<String> existing = (List<String>) doc.get("disabledDates");
-        if (existing == null) return;
+        if (existing == null) existing = new ArrayList<>();
 
+        int beforeSize = existing.size();
+
+        // 실제로 존재하는 항목만 삭제
         existing.removeAll(datesToRemove);
 
+        int removedCount = beforeSize - existing.size();
+
+        // Firestore 업데이트
         shareRef.update("disabledDates", existing).get();
+
+        if (removedCount == 0) {
+            throw new IllegalStateException("삭제된 항목이 없습니다. 요청한 날짜가 목록에 존재하지 않습니다.");
+        }
+
+        return removedCount;
     }
 }
