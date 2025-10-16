@@ -4,6 +4,7 @@ import com.example.backend.payment.util.KakaoPayClient;
 import com.example.backend.payment.dto.PaymentDTO;
 import com.example.backend.payment.util.PaymentUtil;
 import com.google.api.core.ApiFuture;
+import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
@@ -109,10 +110,8 @@ public class PaymentService {
 
     // 결제 취소
     public Map<String, Object> cancelPayment(String uid, String tid) throws Exception {
-
         Firestore db = paymentUtil.getFirestore();
 
-        // Firestore에서 결제금액 조회
         DocumentSnapshot paymentDoc = db.collection("users")
                 .document(uid)
                 .collection("payments")
@@ -134,41 +133,51 @@ public class PaymentService {
         // 카카오페이 결제취소 요청
         Map<String, Object> kakaoResponse = kakaoPayClient.cancelPayment(tid, amount);
 
-        // Firestore 상태 갱신
+        // 결제 상태 Firestore 갱신
         Map<String, Object> paymentData = new HashMap<>();
         paymentData.put("paymentId", tid);
         paymentData.put("status", "CANCELLED");
         paymentData.put("cancelledAt", LocalDateTime.now().toString());
         paymentUtil.savePayment(uid, paymentData);
 
+        // 예약 상태도 취소로 변경
         String reserveId = paymentDoc.getString("reserveId");
         if (reserveId != null && !reserveId.isEmpty()) {
-            // reserveId → shareId → ownerUid
-            ApiFuture<QuerySnapshot> reserveFuture = db.collectionGroup("reserve")
-                    .whereEqualTo("reserveId", reserveId)
-                    .get();
+            DocumentReference reserveRef = db.collection("users")
+                    .document(uid)
+                    .collection("reserve")
+                    .document(reserveId);
 
-            List<QueryDocumentSnapshot> reserves = reserveFuture.get().getDocuments();
-            if (!reserves.isEmpty()) {
-                String shareId = reserves.get(0).getString("shareId");
+            DocumentSnapshot reserveSnap = reserveRef.get().get();
+            if (reserveSnap.exists()) {
+                reserveRef.update("state", "cancelled");
+                System.out.println("예약 상태 cancelled로 변경됨: " + reserveId);
 
-                // shareId로 공유자 UID 찾기
-                ApiFuture<QuerySnapshot> shareFuture = db.collectionGroup("share")
-                        .whereEqualTo("shareId", shareId)
-                        .get();
+                // shareId 추출
+                String shareId = reserveSnap.getString("shareId");
+                if (shareId != null && !shareId.isEmpty()) {
 
-                List<QueryDocumentSnapshot> shares = shareFuture.get().getDocuments();
-                if (!shares.isEmpty()) {
-                    String ownerUid = shares.get(0).getReference().getParent().getParent().getId();
+                    // Firestore 전체에서 shareId 검색 (모든 사용자 하위)
+                    ApiFuture<QuerySnapshot> shareFuture = db.collectionGroup("share")
+                            .whereEqualTo("id", shareId)
+                            .get();
 
-                    // 공유자에게 FCM 발송
-                    notificationService.sendCancelNotification(ownerUid, shareId);
+                    List<QueryDocumentSnapshot> shares = shareFuture.get().getDocuments();
+                    if (!shares.isEmpty()) {
+                        String ownerUid = shares.get(0).getReference().getParent().getParent().getId();
+
+                        // 공유자에게 알림 전송
+                        notificationService.sendCancelNotification(ownerUid, shareId);
+                        System.out.println("sendCancelNotification 호출됨 (공유자: " + ownerUid + ")");
+                    } else {
+                        System.out.println("해당 shareId를 찾을 수 없습니다: " + shareId);
+                    }
                 }
             }
         }
 
         return Map.of(
-                "message", "결제 취소 완료",
+                "message", "결제 및 예약 취소 완료",
                 "status", "CANCELLED",
                 "cancel_amount", amount
         );
