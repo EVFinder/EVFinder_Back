@@ -13,7 +13,10 @@ public class NotificationService {
     private final Firestore firestore;
 
     public void sendCancelNotification(String ownerUid, String shareId) throws Exception {
-        DocumentSnapshot userDoc = firestore.collection("users").document(ownerUid).get().get();
+        DocumentSnapshot userDoc = firestore.collection("users")
+                            .document(ownerUid)
+                            .get()
+                            .get();
         String token = userDoc.getString("fcmToken");
 
         if (token == null || token.isEmpty()) {
@@ -21,11 +24,23 @@ public class NotificationService {
             return;
         }
 
+        DocumentSnapshot shareDoc = firestore.collection("users")
+                            .document(ownerUid)
+                            .collection("share")
+                            .document(shareId)
+                            .get().get();
+
+        String stationName = shareDoc.exists() ? shareDoc.getString("stationName") : shareId; // 충전소 이름이 없다면 일단 shareId로
+
+        if(stationName == null || stationName.isEmpty()){
+            stationName = "알 수 없는 충전소";
+        }
+
         Message message = Message.builder()
                 .setToken(token)
                 .setNotification(Notification.builder()
                         .setTitle("결제 취소 요청 발생")
-                        .setBody("공유한 충전소(" + shareId + ")의 결제가 취소되었습니다.")
+                        .setBody("공유한 충전소(" + stationName + ")의 결제가 취소되었습니다.")
                         .build())
                 .putData("type", "cancel")
                 .build();
