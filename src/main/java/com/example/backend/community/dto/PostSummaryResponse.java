@@ -10,7 +10,13 @@ import lombok.Getter;
 @Builder
 public class PostSummaryResponse {
     private String postId;
+    private String categoryId;
     private String title;
     private String authorName;
+
+    private int views;   // 조회수
+    private int likes;   // 좋아요 수
+    private int comments; //댓글 수
+
     private String createdAt;
 }

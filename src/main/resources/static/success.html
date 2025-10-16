@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>결제 완료</title>
+  <style>
+    body { text-align: center; font-family: sans-serif; margin-top: 120px; }
+    h1 { color: #333; margin-bottom: 20px; }
+    button {
+      background-color: #00C73C;
+      border: none;
+      color: white;
+      padding: 14px 28px;
+      font-size: 16px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>결제가 완료되었습니다 </h1>
+  <p>아래 버튼을 눌러 EVFinder 앱으로 돌아가세요.</p>
+  <button id="openAppBtn">앱으로 돌아가기</button>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const uid = params.get("uid");
+    const orderId = params.get("orderId");
+    const pgToken = params.get("pg_token");
+
+    document.getElementById("openAppBtn").addEventListener("click", () => {
+      const appUrl = `evfinder://kakaopay?status=success&uid=${uid}&orderId=${orderId}&pg_token=${pgToken}`;
+      window.location.href = appUrl;
+    });
+  </script>
+</body>
+</html>

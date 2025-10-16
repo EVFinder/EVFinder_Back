@@ -9,6 +9,7 @@ import com.example.backend.community.service.CategoryService;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -34,6 +35,41 @@ public class CommunityController {
             @RequestAttribute("name") String authorName   // JWT 필터에서 name도 넣어주면 좋음
     ) throws Exception {
         return ResponseEntity.ok(postService.createPost(categoryId, request, uid, authorName));
+    }
+
+    // 좋아요 추가
+    @PostMapping("/categories/{categoryId}/posts/{postId}/like")
+    public ResponseEntity<Void> likePost(
+            @PathVariable String categoryId,
+            @PathVariable String postId,
+            @RequestAttribute("uid") String uid
+    ) throws Exception {
+        postService.likePost(categoryId, postId, uid);
+        return ResponseEntity.ok().build();
+    }
+
+    // 좋아요 취소
+    @DeleteMapping("/categories/{categoryId}/posts/{postId}/like")
+    public ResponseEntity<Void> unlikePost(
+            @PathVariable String categoryId,
+            @PathVariable String postId,
+            @RequestAttribute("uid") String uid
+    ) throws Exception {
+        postService.unlikePost(categoryId, postId, uid);
+        return ResponseEntity.noContent().build();
+    }
+
+    // 좋아요 여부 조회
+    @GetMapping("/categories/{categoryId}/posts/{postId}/islike")
+    public ResponseEntity<Map<String, Object>> getLikeStatus(
+            @PathVariable String categoryId,
+            @PathVariable String postId,
+            @RequestAttribute("uid") String uid
+    ) throws Exception {
+        boolean isLiked = postService.isLiked(categoryId, postId, uid);
+        Map<String, Object> response = new HashMap<>();
+        response.put("isLiked", isLiked);
+        return ResponseEntity.ok(response);
     }
 
     //게시글 목록 조회

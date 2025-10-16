@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>결제 실패</title>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const uid = params.get("uid");
+
+        window.onload = () => {
+            document.getElementById("message").textContent = "결제에 실패했습니다.";
+            setTimeout(() => {
+                window.location.href = `evfinder://kakaopay?status=fail&uid=${uid}`;
+            }, 1500);
+        };
+    </script>
+</head>
+<body style="font-family: sans-serif; text-align: center; margin-top: 120px;">
+    <h2 id="message">결제 실패 처리 중...</h2>
+    <p>잠시 후 EVFinder 앱으로 돌아갑니다.</p>
+</body>
+</html>

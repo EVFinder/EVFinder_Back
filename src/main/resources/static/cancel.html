@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>결제 취소</title>
+    <script>
+        // URL에서 uid와 tid 추출
+        const params = new URLSearchParams(window.location.search);
+        const uid = params.get("uid");
+        const tid = params.get("tid");
+
+        async function notifyServer() {
+            try {
+                await fetch(`/payment/cancel?uid=${uid}&tid=${tid}`);
+            } catch (e) {
+                console.error("서버에 취소 알림 실패:", e);
+            }
+        }
+
+        window.onload = async () => {
+            await notifyServer();
+
+            document.getElementById("message").textContent = "결제가 취소되었습니다.";
+
+            // 앱으로 복귀 시도
+            setTimeout(() => {
+                window.location.href = `evfinder://kakaopay?status=cancel&uid=${uid}`;
+            }, 1500);
+        };
+    </script>
+</head>
+<body style="font-family: sans-serif; text-align: center; margin-top: 120px;">
+    <h2 id="message">결제 취소 중...</h2>
+    <p>잠시 후 EVFinder 앱으로 돌아갑니다.</p>
+</body>
+</html>

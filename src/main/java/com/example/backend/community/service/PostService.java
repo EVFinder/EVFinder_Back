@@ -73,6 +73,83 @@ public class PostService {
                                 .build();
         }
 
+        //좋아요 추가
+        public void likePost(String categoryId, String postId, String uid) throws Exception {
+                DocumentReference likeRef = firestore.collection("community")
+                        .document("categories")
+                        .collection("items")
+                        .document(categoryId)
+                        .collection("posts")
+                        .document(postId)
+                        .collection("likes")
+                        .document(uid);
+
+                DocumentSnapshot snapshot = likeRef.get().get();
+                if (snapshot.exists()) {
+                        throw new IllegalStateException("이미 좋아요를 누른 사용자입니다.");
+                }
+
+                // 1. likes 컬렉션에 기록
+                Map<String, Object> likeData = new HashMap<>();
+                likeData.put("uid", uid);
+                likeData.put("createdAt", Timestamp.now());
+                likeRef.set(likeData).get();
+
+                // 2. posts 문서에 likesCount 증가
+                firestore.collection("community")
+                        .document("categories")
+                        .collection("items")
+                        .document(categoryId)
+                        .collection("posts")
+                        .document(postId)
+                        .update("likes", FieldValue.increment(1))
+                        .get();
+        }
+
+        //좋아요 취소
+        public void unlikePost(String categoryId, String postId, String uid) throws Exception {
+                DocumentReference likeRef = firestore.collection("community")
+                        .document("categories")
+                        .collection("items")
+                        .document(categoryId)
+                        .collection("posts")
+                        .document(postId)
+                        .collection("likes")
+                        .document(uid);
+
+                DocumentSnapshot snapshot = likeRef.get().get();
+                if (!snapshot.exists()) {
+                        throw new IllegalStateException("좋아요를 누른 기록이 없습니다.");
+                }
+
+                // 1. likes 컬렉션에서 제거
+                likeRef.delete().get();
+
+                // 2. posts 문서에 likesCount 감소
+                firestore.collection("community")
+                        .document("categories")
+                        .collection("items")
+                        .document(categoryId)
+                        .collection("posts")
+                        .document(postId)
+                        .update("likes", FieldValue.increment(-1))
+                        .get();
+        }
+
+        //현재 사용자가 좋아요 눌렀는지 여부
+        public boolean isLiked(String categoryId, String postId, String uid) throws Exception {
+                DocumentReference likeRef = firestore.collection("community")
+                        .document("categories")
+                        .collection("items")
+                        .document(categoryId)
+                        .collection("posts")
+                        .document(postId)
+                        .collection("likes")
+                        .document(uid);
+
+                return likeRef.get().get().exists();
+        }
+
         //게시글 목록 조회 (간단 조회)
         public List<PostSummaryResponse> getPostSummariesByCategory(String categoryId, String uid) throws Exception {
                 CollectionReference postsRef = firestore
@@ -83,13 +160,26 @@ public class PostService {
                         .collection("posts");
 
                 List<QueryDocumentSnapshot> documents = postsRef.get().get().getDocuments();
-
                 List<PostSummaryResponse> summaries = new ArrayList<>();
+
                 for (QueryDocumentSnapshot doc : documents) {
+                        String postId = doc.getId();
+
+                        Long views = doc.contains("views") ? doc.getLong("views") : 0L;
+                        Long likes = doc.contains("likes") ? doc.getLong("likes") : 0L;
+                        
+                        int commentCount = postsRef.document(postId)
+                                .collection("comments")
+                                .get().get()
+                                .size();
+                        
                         summaries.add(PostSummaryResponse.builder()
                                 .postId(doc.getId())
                                 .title(doc.getString("title"))
                                 .authorName(doc.getString("authorName"))
+                                .views(views != null ? views.intValue() : 0)
+                                .likes(likes != null ? likes.intValue() : 0)
+                                .comments(commentCount) 
                                 .createdAt(doc.get("createdAt") != null ? doc.get("createdAt").toString() : null)
                                 .build()
                         );
@@ -108,16 +198,31 @@ public class PostService {
                 List<PostSummaryResponse> myPosts = new ArrayList<>();
 
                 for (DocumentReference categoryRef : categoriesRef.listDocuments()) {
+                        String categoryId = categoryRef.getId();
                         CollectionReference postsRef = categoryRef.collection("posts");
                         List<QueryDocumentSnapshot> docs = postsRef.whereEqualTo("uid", uid).get().get().getDocuments();
 
                         for (QueryDocumentSnapshot doc : docs) {
-                        myPosts.add(PostSummaryResponse.builder()
-                                .postId(doc.getId())
-                                .title(doc.getString("title"))
-                                .authorName(doc.getString("authorName"))
-                                .createdAt(doc.get("createdAt") != null ? doc.get("createdAt").toString() : null)
-                                .build());
+                                String postId = doc.getId();
+
+                                Long views = doc.contains("views") ? doc.getLong("views") : 0L;
+                                Long likes = doc.contains("likes") ? doc.getLong("likes") : 0L;
+
+                                int commentCount = postsRef.document(postId)
+                                        .collection("comments")
+                                        .get().get()
+                                        .size();
+                                
+                                myPosts.add(PostSummaryResponse.builder()
+                                        .postId(doc.getId())
+                                        .categoryId(categoryId)
+                                        .title(doc.getString("title"))
+                                        .authorName(doc.getString("authorName"))
+                                        .views(views != null ? views.intValue() : 0)
+                                        .likes(likes != null ? likes.intValue() : 0)
+                                        .comments(commentCount)
+                                        .createdAt(doc.get("createdAt") != null ? doc.get("createdAt").toString() : null)
+                                        .build());
                         }
                 }
                 return myPosts;
@@ -143,6 +248,9 @@ public class PostService {
 
                 String authorUid = (String) data.get("uid");
 
+                DocumentReference likeRef = postRef.collection("likes").document(uid);
+                boolean isLiked = likeRef.get().get().exists();
+
                 return PostResponse.builder()
                         .postId(postId)
                         .title((String) data.get("title"))
@@ -152,8 +260,9 @@ public class PostService {
                         .createdAt((Timestamp) data.get("createdAt"))
                         .updatedAt((Timestamp) data.get("updatedAt"))
                         .views(((Long) data.get("views")).intValue() + 1) // 증가 반영
-                        .likes(((Long) data.get("likes")).intValue())
+                        .likes(((Long) data.getOrDefault("likes", 0L)).intValue())
                         .isOwner(uid.equals(authorUid))
+                        .isLiked(isLiked)
                         .build();
         }
 

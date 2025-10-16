@@ -44,6 +44,23 @@
             <version>${firebase.version}</version>
         </dependency>
 
+        <!-- gRPC (Firebase Admin 9.2.0 호환) -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty-shaded</artifactId>
+            <version>1.55.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-protobuf</artifactId>
+            <version>1.55.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-stub</artifactId>
+            <version>1.55.1</version>
+        </dependency>
+
         <!-- JSON Web Token (jjwt) -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

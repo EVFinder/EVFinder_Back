@@ -7,6 +7,9 @@ import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.*;
 import org.springframework.stereotype.Service;
 
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,6 +44,59 @@ public class ReserveService {
         if (!"available".equals(status)) {
             throw new IllegalStateException("해당 충전기는 현재 예약이 불가능합니다. (status=" + status + ")");
         }
+
+        //예약 가능한지 저거 받아옴
+        List<String> availableDays = (List<String>) shareDoc.get("availableDays");
+        Map<String, List<String>> availableHours = (Map<String, List<String>>) shareDoc.get("availableHours");
+        List<String> disabledDates = (List<String>) shareDoc.get("disabledDates");
+
+        //Firestore의 Timestamp -> LocalDateTime변환
+        LocalDateTime start = reserve.getStartTime().toDate().toInstant()
+                .atZone(ZoneId.of("Asia/Seoul")).toLocalDateTime();
+        LocalDateTime end = reserve.getEndTime().toDate().toInstant()
+                .atZone(ZoneId.of("Asia/Seoul")).toLocalDateTime();
+
+        String dayKey = start.getDayOfWeek().toString().substring(0, 3); // 예: MON, TUE, ...
+        String dateKey = start.toLocalDate().toString(); // yyyy-MM-dd
+
+
+        // 비활성화 날짜 검사
+        if (disabledDates != null && disabledDates.contains(dateKey)) {
+            throw new IllegalStateException("이 날짜(" + dateKey + ")에는 충전소를 이용할 수 없습니다.");
+        }
+
+        // 이용 가능 요일 검사
+        if (availableDays != null && !availableDays.isEmpty() && !availableDays.contains(dayKey)) {
+            throw new IllegalStateException("이 요일(" + dayKey + ")에는 예약이 불가능합니다.");
+        }
+
+        // 이용 가능 시간대 검사
+        if (availableHours != null && availableHours.containsKey(dayKey)) {
+            List<String> hoursList = availableHours.get(dayKey);
+            boolean fits = false;
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("HH:mm");
+
+            for (String range : hoursList) {
+                String[] parts = range.split("-");
+                if (parts.length == 2) {
+                    LocalTime startAllowed = LocalTime.parse(parts[0], fmt);
+                    LocalTime endAllowed = LocalTime.parse(parts[1], fmt);
+
+                    // 시작, 종료 모두 허용 시간 안에 있는지
+                    if (!start.toLocalTime().isBefore(startAllowed)
+                            && !end.toLocalTime().isAfter(endAllowed)) {
+                        fits = true;
+                        break;
+                    }
+                }
+            }
+            if (!fits) {
+            throw new IllegalStateException("선택한 시간(" + start.toLocalTime() + "~" +
+                    end.toLocalTime() + ")은 이용 가능 시간대에 포함되지 않습니다.");
+            }
+        }
+
+
 
         // 2. 해당 shareId 의 기존 예약들과 겹침 검사
         ApiFuture<QuerySnapshot> future = db.collectionGroup("reserve")
