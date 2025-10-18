@@ -24,7 +24,7 @@ public class JwtUtil {
     }
 
     // 토큰 발급 (uid, email, name 포함)
-    public String generateToken(String uid, String email, String name, String role) {
+    public String generateToken(String uid, String email, String name, String role, String phone) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expirationMs);
 
@@ -33,6 +33,7 @@ public class JwtUtil {
                 .claim("email", email)
                 .claim("name", name)
                 .claim("role", role)
+                .claim("phone",phone)
                 .setIssuedAt(now)
                 .setExpiration(expiry)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)

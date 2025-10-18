@@ -4,13 +4,15 @@ public class SignupRequest {
     private String email;
     private String password;
     private String userName;
+    private String phone;
 
     public SignupRequest() {}
 
-    public SignupRequest(String email, String password, String userName) {
+    public SignupRequest(String email, String password, String userName, String phone) {
         this.email = email;
         this.password = password;
         this.userName = userName;
+        this.phone = phone;
     }
 
     public String getEmail() { return email; }
@@ -21,4 +23,7 @@ public class SignupRequest {
 
     public String getUserName() { return userName; }
     public void setUserName(String userName) { this.userName = userName; }
+
+    public String getPhone() {return phone;}
+    public void setPhone(String phone) {this.phone = phone;}
 }

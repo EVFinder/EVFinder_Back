@@ -58,12 +58,17 @@ public class AuthService {
             userData.put("createdAt", Timestamp.now());
             userData.put("role", role);
 
+            //전화번호 Firestore에 저장
+            if (request.getPhone() != null && !request.getPhone().isEmpty()) {
+                userData.put("phone", request.getPhone());
+            }
+
             //찍고, .get으로 가져오기
             userRef.set(userData).get();
 
-            String jwt = jwtUtil.generateToken(uid, email, request.getUserName(), role);
+            String jwt = jwtUtil.generateToken(uid, email, request.getUserName(), role, request.getPhone());
 
-            return new SignupResponse(uid, email, request.getUserName(), jwt);
+            return new SignupResponse(uid, email, request.getUserName(),request.getPhone() ,jwt);
 
         } catch (Exception e) {
             System.err.println("Firebase Signup 실패: " + e.getMessage());
@@ -107,10 +112,14 @@ public class AuthService {
             String userName = snapshot.contains("userName") ? snapshot.getString("userName") : "사용자";
             String role = snapshot.contains("role") ? snapshot.getString("role") : "USER";
 
-            // 3. JWT 발급
-            String jwt = jwtUtil.generateToken(uid, email,userName, role);
+            // 3. Firestore에서 phone 가져오기
+            String phone = snapshot.contains("phone") ? snapshot.getString("phone") : null;
 
-            return new LoginResponse(uid, email, userName, jwt);
+
+            // 4. JWT 발급
+            String jwt = jwtUtil.generateToken(uid, email,userName, role,phone);
+
+            return new LoginResponse(uid, email, userName, phone, jwt);
 
         } catch (IllegalArgumentException e) {
             System.err.println("로그인 실패: " + e.getMessage());
@@ -132,6 +141,9 @@ public class AuthService {
         // Firestore 사용자 문서 확인/생성
         DocumentReference userRef = firestore.collection("users").document(uid);
         DocumentSnapshot snapshot = userRef.get().get();
+
+        String phone = null; 
+
         if (!snapshot.exists()) {
             Map<String, Object> userData = new HashMap<>();
             userData.put("email", email);
@@ -141,11 +153,14 @@ public class AuthService {
             userRef.set(userData).get();
         } else {
             role = snapshot.contains("role") ? snapshot.getString("role") : "USER";
+            if (snapshot.contains("phone")) {
+                phone = snapshot.getString("phone"); //phone 읽기
+            }
         }
 
         // JWT 발급
-        String jwt = jwtUtil.generateToken(uid, email, name, role);
-        return new LoginResponse(uid, email, name, jwt);
+        String jwt = jwtUtil.generateToken(uid, email, name, role, phone);
+        return new LoginResponse(uid, email, name, phone,jwt);
     }
 
     //역할 가져오기
